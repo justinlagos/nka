@@ -4,9 +4,13 @@ import { ActionForm } from "@/components/ActionForm";
 import { acceptInvite, createOrg } from "../actions";
 import { getCurrentMembership, requireProfile } from "@/lib/session";
 
-export default async function Onboarding() {
+export default async function Onboarding({ searchParams }: { searchParams: Promise<{ setup?: string }> }) {
+  const { setup } = await searchParams;
   const { supabase, profile } = await requireProfile();
   if (await getCurrentMembership()) redirect("/app");
+  // Signed in from a demo request on another device: finish building their workspace.
+  const { data: pending } = await supabase.rpc("pending_demo");
+  if (pending === true && setup !== "failed") redirect("/demo/ready");
   const { data } = await supabase.rpc("my_invites");
   const invites = (data ?? []) as { token: string; org_name: string; role: string }[];
   const first = profile.full_name.split(" ")[0];
@@ -23,6 +27,12 @@ export default async function Onboarding() {
           </p>
         </div>
       </div>
+
+      {setup === "failed" && (
+        <div className="callout callout-warn">
+          <p>We couldn&apos;t finish setting up your workspace from your answers. Name it below and we&apos;ll take it from there.</p>
+        </div>
+      )}
 
       {invites.length > 0 && (
         <section className="panel">

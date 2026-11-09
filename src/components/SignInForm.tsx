@@ -35,7 +35,7 @@ export function SignInForm({ next }: { next: string }) {
             autoFocus
             className="code-input"
           />
-          <span className="hint">Or open the link in the email instead. Both work on any device.</span>
+          <span className="hint">Or open the link in the email instead.</span>
         </label>
         <div className="form-foot">
           <SubmitButton label="Sign in" pending="Checking" />

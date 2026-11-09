@@ -2,9 +2,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
-import { getSession, ORG_COOKIE } from "@/lib/session";
-import { draftBrief } from "@/lib/ai";
-import { brandBookText, SERVICE_OPTIONS } from "@/lib/brief";
+import { getSession } from "@/lib/session";
+import { setUpFromDemo } from "@/lib/demo-setup";
 import { notifyStudio } from "@/lib/notify";
 import { siteOrigin } from "@/lib/origin";
 import { VOLUMES, TEAM_SIZES } from "@/content/demo";
@@ -81,7 +80,7 @@ export async function startDemo(_prev: DemoState, form: FormData): Promise<DemoS
   const origin = await siteOrigin();
   const { error: otpError } = await supabase.auth.signInWithOtp({
     email: d.email,
-    options: { emailRedirectTo: `${origin}/auth/callback?next=/app`, data: { full_name: d.full_name } },
+    options: { emailRedirectTo: `${origin}/auth/callback?next=/demo/ready`, data: { full_name: d.full_name } },
   });
   if (otpError) {
     if (/rate limit|too many|security purposes/i.test(otpError.message)) {
@@ -90,6 +89,8 @@ export async function startDemo(_prev: DemoState, form: FormData): Promise<DemoS
     console.error("Demo code not sent", otpError.message);
     return err("Your answers are saved, but the code email didn't send. Try again in a minute.", d.email);
   }
+  // A sign-in link opened in this browser comes back to finish the setup.
+  (await cookies()).set("nka_next", "/demo/ready", { path: "/", httpOnly: true, sameSite: "lax", secure: true, maxAge: 3600 });
   return { ok: true, email: d.email, at: Date.now() };
 }
 
@@ -106,36 +107,6 @@ export async function finishDemo(_prev: DemoState, form: FormData): Promise<Demo
   redirect("/app");
 }
 
-// Creates the workspace (or reuses theirs), drafts the first brief, and opens it.
 async function buildWorkspace(): Promise<never> {
-  const supabase = await supabaseServer();
-  const { data, error } = await supabase.rpc("setup_from_demo");
-  const made = (data ?? {}) as { org?: string | null; project?: string | null };
-  if (error || !made.org) {
-    if (error) console.error("Workspace setup failed", error.message);
-    redirect("/app");
-  }
-  (await cookies()).set(ORG_COOKIE, made.org, { path: "/", httpOnly: true, sameSite: "lax", secure: true, maxAge: 31536000 });
-
-  if (made.project) {
-    const [{ data: p }, { data: book }] = await Promise.all([
-      supabase.from("projects").select("id, title, brief, status").eq("id", made.project).maybeSingle(),
-      supabase.from("brand_books").select("*").eq("org_id", made.org).maybeSingle(),
-    ]);
-    // Only draft once: a brief already drafted (or edited) is left alone.
-    if (p && p.status === "draft" && p.title === "First brief") {
-      const request = String((p.brief as { summary?: string })?.summary ?? "");
-      const d = await draftBrief(request, brandBookText(book));
-      await supabase
-        .from("projects")
-        .update({
-          title: d.title.slice(0, 200) || "First brief",
-          brief: d.brief,
-          service: SERVICE_OPTIONS.some((s) => s.value === d.service) ? d.service : "",
-        })
-        .eq("id", p.id);
-    }
-    redirect(`/app/projects/${made.project}/edit?welcome=demo`);
-  }
-  redirect("/app");
+  redirect(await setUpFromDemo());
 }
