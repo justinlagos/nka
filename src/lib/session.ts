@@ -64,7 +64,7 @@ export const getCurrentMembership = cache(async (): Promise<Membership | null> =
 export async function requireMembership() {
   const s = await requireProfile();
   const membership = await getCurrentMembership();
-  if (!membership) redirect(s.profile.is_staff ? "/admin" : "/app/onboarding");
+  if (!membership) redirect("/app/onboarding");
   return { ...s, membership, org: membership.org, role: membership.role };
 }
 

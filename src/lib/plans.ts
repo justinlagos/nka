@@ -66,13 +66,13 @@ export const PLANS: Plan[] = [
 export const FLEX = {
   name: "Flex",
   fromGbp: 5000,
-  minimumMonths: 3,
-  rolloverMonths: 2,
-  summary: "A monthly budget you spend on any service. Every project is estimated before work starts.",
+  rolloverMonths: 12,
+  summary: "A monthly budget you spend on any service. Every project is priced before work starts, and the price is fixed.",
   includes: [
     "Any service, any mix, including identity, video and web",
     "Each project priced and approved before work starts",
-    "Unused budget rolls over for 2 months",
+    "Unused budget carries over for 12 months",
+    "If you leave, we pay back what's left",
     "Top up any month for big launches",
     "Budget and spend shown live in your workspace",
   ],

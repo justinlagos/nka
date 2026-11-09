@@ -19,14 +19,18 @@ const DOCS: Record<string, { title: string; updated: string; body: { h: string; 
         h: "Plans",
         p: [
           "Plans are paid monthly in advance by card through Stripe. Your plan sets how many requests we work on at the same time. Requests beyond that wait in your queue and start in the order you sent them.",
-          "You can change or cancel your plan from Billing. Changes and cancellations take effect at the end of the month you have paid for. We don't refund part months.",
-          `Flex is a monthly budget with a ${FLEX.minimumMonths}-month minimum term. Each project is estimated, and the estimate is taken from your budget when an owner or admin approves it. Unused budget rolls over for ${FLEX.rolloverMonths} months and then expires.`,
+          "Your monthly price is agreed with you before you pay and confirmed in writing. We won't change it without your agreement.",
+          "You can change, pause or cancel your plan from Billing at any time. There is no minimum term, notice period or exit fee. Cancellation takes effect at the end of the month you have paid for, and work already started that month is finished. A pause stops charges for up to a month at a time; nothing new starts while paused.",
+          `Flex is a monthly budget with no minimum term. Each project is estimated, and the estimate is taken from your budget when an owner or admin approves it. Unused budget carries over for ${FLEX.rolloverMonths} months. If you leave, we pay back unused budget that hasn't been committed to approved work, within 14 days of your request.`,
         ],
       },
       {
         h: "Briefs and revisions",
         p: [
           "We work to the brief you approve. We revise work until it meets that brief. If you change the brief, we'll tell you what that means for timing or cost before we continue.",
+          "An approved estimate is a fixed price. If the work takes us longer than estimated, we don't charge more. The price only changes if you ask for something new and approve a new estimate.",
+          "Other sizes and formats of work you have approved are included at no charge and don't count against your plan.",
+          "One named designer leads your account. If we need to change who that is, we'll tell you first and give you a written handover note.",
           "Delivery dates in estimates assume you reply to questions and reviews within two working days.",
         ],
       },
@@ -66,7 +70,7 @@ const DOCS: Record<string, { title: string; updated: string; body: { h: string; 
           "Account details: your name, email address and the organisation you belong to.",
           "Work: briefs, comments, files and approvals you add to the workspace.",
           "Billing: Stripe processes card payments. We see the plan, payment status and invoices, not your full card number.",
-          "Enquiries: what you send through Book a call.",
+          "Enquiries: what you send through Book a demo, including your phone number if you give it.",
         ],
       },
       {
@@ -90,7 +94,7 @@ const DOCS: Record<string, { title: string; updated: string; body: { h: string; 
       {
         h: "Your rights",
         p: [
-          "You can ask to see, correct, export or delete your data, or object to how we use it. Contact us through Book a call. You can also complain to the Information Commissioner's Office (ico.org.uk).",
+          "You can ask to see, correct, export or delete your data, or object to how we use it. Contact us by email or through Book a demo. You can also complain to the Information Commissioner's Office (ico.org.uk).",
         ],
       },
     ],

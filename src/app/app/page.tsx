@@ -6,14 +6,16 @@ import { requireMembership } from "@/lib/session";
 import { ACTIVE } from "@/lib/status";
 import { planLabel } from "@/lib/plans";
 import { summariseBudget, type LedgerEntry } from "@/lib/budget";
-import { money } from "@/lib/format";
+import { date, money } from "@/lib/format";
+import { people, displayName } from "@/lib/data";
+import { onTimeRecord, ukDate } from "@/lib/ontime";
 
 export default async function WorkspaceHome() {
   const { supabase, org, profile } = await requireMembership();
   const today = new Date().toISOString().slice(0, 10);
   const monthStart = today.slice(0, 8) + "01";
 
-  const [{ data: projects }, { data: ledger }] = await Promise.all([
+  const [{ data: projects }, { data: ledger }, { data: leadRow }, { data: handovers }, { data: firstFiles }] = await Promise.all([
     supabase
       .from("projects")
       .select("id, number, title, status, deadline, estimate_due, updated_at, completed_at")
@@ -23,6 +25,9 @@ export default async function WorkspaceHome() {
     org.plan === "flex"
       ? supabase.from("budget_ledger").select("kind, amount, effective_on").eq("org_id", org.id)
       : Promise.resolve({ data: [] as LedgerEntry[] }),
+    supabase.from("orgs").select("lead_id, lead_since").eq("id", org.id).maybeSingle(),
+    supabase.from("lead_changes").select("from_user, note, created_at").eq("org_id", org.id).order("created_at", { ascending: false }).limit(1),
+    supabase.from("deliverables").select("project_id, created_at").eq("org_id", org.id).order("created_at").limit(2000),
   ]);
 
   const rows = (projects ?? []) as (ProjectRow & { completed_at: string | null })[];
@@ -32,6 +37,15 @@ export default async function WorkspaceHome() {
   const doneThisMonth = rows.filter((p) => p.status === "completed" && (p.completed_at ?? "") >= monthStart);
   const budget = org.plan === "flex" ? summariseBudget((ledger ?? []) as LedgerEntry[], org.rollover_months, today) : null;
   const firstName = profile.full_name.split(" ")[0];
+
+  const leadId = (leadRow?.lead_id as string | null) ?? null;
+  const lastHandover = (handovers ?? [])[0];
+  const who = await people(supabase, [leadId]);
+  const lead = leadId ? who.get(leadId) : undefined;
+
+  const firstDelivery = new Map<string, string>();
+  for (const f of firstFiles ?? []) if (!firstDelivery.has(f.project_id)) firstDelivery.set(f.project_id, ukDate(f.created_at));
+  const record = onTimeRecord(rows.map((p) => ({ due: p.estimate_due, firstDelivered: firstDelivery.get(p.id) ?? null })));
 
   return (
     <>
@@ -67,6 +81,14 @@ export default async function WorkspaceHome() {
           <b>{doneThisMonth.length}</b>
           <span>Completed this month</span>
         </div>
+        {record.total > 0 && (
+          <div className="stat">
+            <b>
+              {record.onTime} of {record.total}
+            </b>
+            <span>First drafts on time</span>
+          </div>
+        )}
         {budget && (
           <div className="stat">
             <b>{money(budget.balance, org.currency)}</b>
@@ -103,6 +125,24 @@ export default async function WorkspaceHome() {
           </section>
         </div>
         <aside>
+          <section className="panel">
+            <h2>Your designer</h2>
+            {lead ? (
+              <>
+                <p style={{ marginBottom: 6 }}>
+                  <b>{displayName(lead)}</b> leads your account and works on your briefs
+                  {leadRow?.lead_since ? `, since ${date(leadRow.lead_since)}` : ""}.
+                </p>
+                {lastHandover?.from_user && lastHandover.note && (
+                  <p className="small muted">
+                    Handover note, {date(lastHandover.created_at)}: {lastHandover.note}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="small muted">The studio names one designer for your account before your first brief starts. You&apos;ll see them here.</p>
+            )}
+          </section>
           <section className="panel composer">
             <h2>Quick brief</h2>
             <ActionForm action={startBrief} submit="Draft my brief" pending="Drafting">
@@ -118,10 +158,10 @@ export default async function WorkspaceHome() {
           </section>
           {budget && budget.expiringSoon > 0 && (
             <section className="panel">
-              <h2>Budget expiring soon</h2>
+              <h2>Unused budget</h2>
               <p>
-                {money(budget.expiringSoon, org.currency)} of unused budget expires by {budget.nextExpiry}. Send a brief to use
-                it.
+                {money(budget.expiringSoon, org.currency)} reaches the end of its carry-over on {date(budget.nextExpiry)}. Use it, or
+                ask us to pay it back. Either is fine.
               </p>
             </section>
           )}

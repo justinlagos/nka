@@ -1,10 +1,13 @@
 import Link from "next/link";
-import { requireMembership } from "@/lib/session";
+import { ActionForm } from "@/components/ActionForm";
+import { requestResize } from "../actions";
+import { canEdit, requireMembership } from "@/lib/session";
 import { signedUrls } from "@/lib/data";
 import { date, fileSize, projectRef } from "@/lib/format";
 
 export default async function Library({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const { supabase, org } = await requireMembership();
+  const { supabase, org, role } = await requireMembership();
+  const mayAsk = canEdit(role);
   const q = ((await searchParams).q ?? "").trim().slice(0, 80);
 
   let query = supabase
@@ -34,7 +37,10 @@ export default async function Library({ searchParams }: { searchParams: Promise<
       <div className="app-head">
         <div>
           <h1>Library</h1>
-          <p className="muted">Every file you&apos;ve approved, newest first. Links work for an hour; refresh to get new ones.</p>
+          <p className="muted">
+            Every file you&apos;ve approved, newest first. Other sizes and formats of anything here are free and don&apos;t use a
+            request slot.
+          </p>
         </div>
         <form role="search" style={{ display: "flex", gap: 8 }}>
           <label className="skip" htmlFor="lib-q">
@@ -82,6 +88,24 @@ export default async function Library({ searchParams }: { searchParams: Promise<
                     <a href={url} download={f.file_name} target="_blank" rel="noreferrer">
                       Download
                     </a>
+                  )}
+                  {mayAsk && (
+                    <details className="lib-resize">
+                      <summary>Ask for other sizes or formats</summary>
+                      <ActionForm action={requestResize} submit="Send to my designer" pending="Sending" buttonClass="btn btn-small">
+                        <input type="hidden" name="id" value={f.id} />
+                        <label className="field">
+                          <span>Sizes or formats you need</span>
+                          <textarea
+                            name="sizes"
+                            rows={3}
+                            required
+                            maxLength={2000}
+                            placeholder={"Instagram story 1080x1920\nLinkedIn 1200x627\nA4 print PDF"}
+                          />
+                        </label>
+                      </ActionForm>
+                    </details>
                   )}
                 </div>
               </div>

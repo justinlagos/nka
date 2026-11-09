@@ -117,3 +117,43 @@ test("format helpers", () => {
   assert.equal(money(1500), "£1,500");
   assert.equal(money(-12.5, "ngn", 2), "-₦12.50");
 });
+
+import { deliveryTiming, timingText, onTimeRecord, ukDate } from "../src/lib/ontime.ts";
+
+test("budget: a payout returns unused budget and leaves nothing to spend", () => {
+  const s = summariseBudget(
+    [
+      { kind: "allocation", amount: 5000, effective_on: "2026-09-01" },
+      { kind: "spend", amount: -1800, effective_on: "2026-09-10" },
+      { kind: "payout", amount: -3200, effective_on: "2026-10-01" },
+    ],
+    12,
+    "2026-11-09",
+  );
+  assert.equal(s.balance, 0);
+  assert.equal(s.spent, 1800);
+  assert.equal(s.paidOut, 3200);
+  assert.equal(s.expirable, 0);
+});
+
+test("ontime: delivery against the agreed date", () => {
+  assert.deepEqual(deliveryTiming(null, null, "2026-11-09"), { state: "none" });
+  assert.deepEqual(deliveryTiming("2026-11-12", "2026-11-12", "2026-11-20"), { state: "on_time", days: 0 });
+  assert.deepEqual(deliveryTiming("2026-11-12", "2026-11-14", "2026-11-20"), { state: "late", days: 2 });
+  assert.deepEqual(deliveryTiming("2026-11-12", null, "2026-11-09"), { state: "due", days: 3 });
+  assert.deepEqual(deliveryTiming("2026-11-12", null, "2026-11-13"), { state: "overdue", days: 1 });
+  assert.equal(timingText({ state: "late", days: 1 }), "First files delivered 1 day late");
+  assert.equal(timingText({ state: "due", days: 0 }), "Due today");
+  assert.deepEqual(
+    onTimeRecord([
+      { due: "2026-11-01", firstDelivered: "2026-10-31" },
+      { due: "2026-11-01", firstDelivered: "2026-11-02" },
+      { due: "2026-11-01", firstDelivered: null },
+      { due: null, firstDelivered: "2026-11-02" },
+    ]),
+    { onTime: 1, total: 2 },
+  );
+  // 23:30 UTC on 9 Nov is still 9 Nov in London in winter, 10 Nov in summer time.
+  assert.equal(ukDate("2026-11-09T23:30:00Z"), "2026-11-09");
+  assert.equal(ukDate("2026-07-09T23:30:00Z"), "2026-07-10");
+});

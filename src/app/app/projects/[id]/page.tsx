@@ -11,6 +11,7 @@ import { STATUS, STAGES, stageIndex, type ProjectStatus } from "@/lib/status";
 import { BRIEF_FIELDS, normaliseBrief, SERVICE_OPTIONS } from "@/lib/brief";
 import { date, dateTime, fileSize, money, projectRef, initials } from "@/lib/format";
 import { planLabel } from "@/lib/plans";
+import { deliveryTiming, timingText, ukDate } from "@/lib/ontime";
 
 type Deliverable = {
   id: string;
@@ -33,6 +34,7 @@ const EVENT_TEXT: Record<string, (d: Record<string, unknown>) => string> = {
   deliverable_added: (d) => `added ${d.title} v${d.version}`,
   deliverable_approved: (d) => `approved ${d.title} v${d.version}`,
   deliverable_changes_requested: (d) => `asked for changes to ${d.title} v${d.version}`,
+  resize_requested: (d) => `asked for resizes of ${d.from} v${d.version}`,
 };
 
 export default async function ProjectPage({
@@ -115,6 +117,12 @@ export default async function ProjectPage({
   const showMoney = org.plan === "flex" || org.plan === "none" || org.plan === "bespoke";
   const current = stageIndex(status);
   const general = comments.filter((c) => !c.deliverable_id);
+  const timing = deliveryTiming(
+    p.estimate_due,
+    deliverables.length ? ukDate(deliverables[0].created_at) : null,
+    ukDate(new Date()),
+  );
+  const isResize = p.kind === "resize";
 
   return (
     <>
@@ -129,13 +137,24 @@ export default async function ProjectPage({
         <StatusPill status={status} />
       </div>
 
-      {sent && (
+      {sent && sent !== "resize" && (
         <div className="callout">
           <p>
             {status === "queued"
               ? "Brief sent. Your plan's active requests are full, so this one is queued and will start automatically."
               : "Brief sent. The studio will confirm scope and a delivery date, usually within one working day."}
           </p>
+        </div>
+      )}
+
+      {isResize && !sent && (
+        <div className="callout">
+          <p>Free resize. It doesn&apos;t use one of your plan&apos;s request slots or any Flex budget.</p>
+        </div>
+      )}
+      {sent === "resize" && (
+        <div className="callout">
+          <p>Resize requested. It&apos;s free, it&apos;s already with your designer, and it doesn&apos;t use a request slot.</p>
         </div>
       )}
 
@@ -161,6 +180,11 @@ export default async function ProjectPage({
                 Estimate
               </h2>
               {showMoney && p.estimate_amount !== null && <div className="amount">{money(p.estimate_amount, org.currency, 2)}</div>}
+              <p className="small muted" style={{ margin: "4px 0 0" }}>
+                {showMoney
+                  ? "Fixed price. If it takes us longer, that's on us. It only changes if you ask for something new and approve the new price."
+                  : "Included in your plan. No extra charge."}
+              </p>
               <dl className="kv" style={{ margin: "10px 0" }}>
                 {p.estimate_hours !== null && (
                   <>
@@ -298,13 +322,18 @@ export default async function ProjectPage({
             <h2>Details</h2>
             <dl className="kv">
               <dt>Type</dt>
-              <dd>{SERVICE_OPTIONS.find((s) => s.value === p.service)?.label ?? "Not set"}</dd>
+              <dd>{isResize ? "Other sizes and formats (free)" : SERVICE_OPTIONS.find((s) => s.value === p.service)?.label ?? "Not set"}</dd>
               <dt>Needed by</dt>
               <dd>{p.deadline ? date(p.deadline) : "No date given"}</dd>
               {p.estimate_due && (
                 <>
                   <dt>Delivery</dt>
-                  <dd>{date(p.estimate_due)}</dd>
+                  <dd>
+                    {date(p.estimate_due)}
+                    {timing.state !== "none" && status !== "cancelled" && (
+                      <span className={`timing timing-${timing.state}`}>{timingText(timing)}</span>
+                    )}
+                  </dd>
                 </>
               )}
               <dt>Designer</dt>

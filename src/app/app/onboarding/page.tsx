@@ -1,27 +1,58 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ActionForm } from "@/components/ActionForm";
-import { createOrg } from "../actions";
+import { acceptInvite, createOrg } from "../actions";
 import { getCurrentMembership, requireProfile } from "@/lib/session";
 
 export default async function Onboarding() {
-  const { profile } = await requireProfile();
+  const { supabase, profile } = await requireProfile();
   if (await getCurrentMembership()) redirect("/app");
+  const { data } = await supabase.rpc("my_invites");
+  const invites = (data ?? []) as { token: string; org_name: string; role: string }[];
+  const first = profile.full_name.split(" ")[0];
+
   return (
     <div style={{ maxWidth: 560 }}>
       <div className="app-head">
         <div>
-          <h1>Set up your workspace</h1>
+          <h1>{profile.is_staff ? "Try the client side" : "Set up your workspace"}</h1>
           <p className="muted">
-            Welcome{profile.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}. Name your organisation; you can invite your
-            team next. If a colleague already uses Nka, ask them for an invite link instead.
+            {profile.is_staff
+              ? "You're studio staff. Create a test workspace to see exactly what clients see: briefs, estimates, review and the library. Your studio queue stays in the menu."
+              : `Welcome${first ? `, ${first}` : ""}. Name your organisation; you can invite your team next.`}
           </p>
         </div>
       </div>
+
+      {invites.length > 0 && (
+        <section className="panel">
+          <h2>You&apos;ve been invited</h2>
+          {invites.map((i) => (
+            <div key={i.token} style={{ marginBottom: 12 }}>
+              <p style={{ marginBottom: 6 }}>
+                Join <b>{i.org_name}</b> as {i.role === "admin" ? "an admin" : `a ${i.role}`}.
+              </p>
+              <ActionForm action={acceptInvite} submit={`Join ${i.org_name}`} pending="Joining" buttonClass="btn btn-small">
+                <input type="hidden" name="token" value={i.token} />
+              </ActionForm>
+            </div>
+          ))}
+          <p className="small muted">Or set up a separate workspace below.</p>
+        </section>
+      )}
+
       <div className="panel">
         <ActionForm action={createOrg} submit="Create workspace" pending="Creating">
           <label className="field">
             <span>Organisation name</span>
-            <input type="text" name="name" required maxLength={120} autoComplete="organization" />
+            <input
+              type="text"
+              name="name"
+              required
+              maxLength={120}
+              autoComplete="organization"
+              defaultValue={profile.is_staff ? "Test client" : ""}
+            />
           </label>
           <label className="field">
             <span>Country</span>
@@ -38,6 +69,11 @@ export default async function Onboarding() {
           </label>
         </ActionForm>
       </div>
+      {profile.is_staff && (
+        <p className="small">
+          <Link href="/admin">Back to the studio queue</Link>
+        </p>
+      )}
     </div>
   );
 }

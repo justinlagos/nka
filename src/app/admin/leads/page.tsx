@@ -11,13 +11,13 @@ export default async function Leads() {
       <div className="app-head">
         <div>
           <h1>Call requests</h1>
-          <p className="muted">From the Book a call form. Reply by email, then mark them here.</p>
+          <p className="muted">From Book a demo. Each one already has a workspace with their first brief drafted. Call them, then mark them here.</p>
         </div>
       </div>
       {leads.length === 0 ? (
         <div className="panel empty">
           <strong>No requests yet.</strong>
-          They arrive from /book.
+          They arrive from /demo.
         </div>
       ) : (
         leads.map((l) => (

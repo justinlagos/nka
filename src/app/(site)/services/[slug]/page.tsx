@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import { SERVICE_IMG } from "@/content/images";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { SERVICES, serviceBySlug } from "@/content/services";
@@ -17,6 +19,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
   const service = serviceBySlug((await params).slug);
   if (!service) notFound();
   const related = visibleWork().filter((w) => w.services.includes(service.slug));
+  const img = SERVICE_IMG[service.slug];
 
   return (
     <>
@@ -27,6 +30,12 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
           </Link>
           <h1 className="h1">{service.name}</h1>
           <p className="lede">{service.line}</p>
+          {img && (
+            <figure style={{ margin: 0 }}>
+              <Image className="svc-hero-img" src={img.src} alt={img.alt} width={img.w} height={img.h} priority sizes="(max-width: 1240px) 92vw, 1180px" />
+              <figcaption className="example-note">Example piece for a made-up brand.</figcaption>
+            </figure>
+          )}
         </div>
       </section>
       <section className="section" style={{ paddingTop: 24 }}>
@@ -79,11 +88,11 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
         <div className="wrap cta-band">
           <h2 className="h2">Need {service.name.toLowerCase()} this month?</h2>
           <div className="hero-actions" style={{ marginTop: 0 }}>
-            <Link href="/pricing" className="btn">
-              See plans
+            <Link href="/demo" className="btn">
+              Book a demo
             </Link>
-            <Link href={`/book?interest=project`} className="btn btn-line">
-              Book a call
+            <Link href="/pricing" className="btn btn-line">
+              How pricing works
             </Link>
           </div>
         </div>

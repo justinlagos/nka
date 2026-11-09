@@ -59,7 +59,8 @@ async function orgForCustomer(customer: string): Promise<string | null> {
 async function applySubscription(orgId: string, sub: Stripe.Subscription) {
   const lookup = sub.items.data[0]?.price?.lookup_key;
   const plan = planByLookupKey(lookup);
-  const status = planStatusFromStripe(sub.status);
+  // A pause set from Nka's billing page keeps the subscription "active" in Stripe but stops collection.
+  const status = sub.pause_collection && sub.status === "active" ? "paused" : planStatusFromStripe(sub.status);
   const ended = status === "canceled";
   const update: Record<string, unknown> = {
     stripe_customer_id: customerId(sub),

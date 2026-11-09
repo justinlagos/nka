@@ -8,3 +8,6 @@ out
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
+
+# Original image downloads
+public/img/*.src.webp

@@ -11,10 +11,10 @@ export default async function EditBrief({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ drafted?: string }>;
+  searchParams: Promise<{ drafted?: string; welcome?: string }>;
 }) {
   const { id } = await params;
-  const { drafted } = await searchParams;
+  const { drafted, welcome } = await searchParams;
   const { supabase } = await requireProfile();
   const { data: p } = await supabase
     .from("projects")
@@ -44,12 +44,22 @@ export default async function EditBrief({
           </p>
           <h1>Check your brief</h1>
           <p className="muted">
-            {drafted
+            {drafted || welcome
               ? "Here's the brief laid out from what you wrote. Fix anything that's off, answer what you can under open questions, then send it."
               : "Fill in what you know. The studio will ask about the rest."}
           </p>
         </div>
       </div>
+
+      {welcome === "demo" && (
+        <div className="callout">
+          <p>
+            <b>Your workspace is ready.</b> We saved your company details to your brand book and drafted this brief from what you
+            told us. Check it and send it, or leave it as a draft to go through on the call. Your designer will be in touch at the
+            time you chose.
+          </p>
+        </div>
+      )}
 
       <section className="panel">
         <ActionForm action={saveBrief} submit="Send to the studio" pending="Working" submitValue="send" secondary={{ label: "Save draft", value: "save" }}>

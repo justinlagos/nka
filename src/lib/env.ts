@@ -5,6 +5,8 @@ export const env = {
   supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "",
   siteUrl: (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, ""),
   bookingUrl: process.env.NEXT_PUBLIC_BOOKING_URL ?? "",
+  contactEmail: process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "",
+  contactPhone: process.env.NEXT_PUBLIC_CONTACT_PHONE ?? "",
 };
 
 export function serverEnv() {

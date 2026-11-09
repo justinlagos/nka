@@ -47,8 +47,8 @@ export default function About() {
       <section className="section on-ink">
         <div className="wrap cta-band">
           <h2 className="h2">Talk to us about your next quarter.</h2>
-          <Link href="/book" className="btn">
-            Book a call
+          <Link href="/demo" className="btn">
+            Book a demo
           </Link>
         </div>
       </section>

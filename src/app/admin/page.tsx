@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ProjectList, type ProjectRow } from "@/components/ProjectList";
 import { requireStaff } from "@/lib/session";
 
@@ -31,6 +32,14 @@ export default async function StudioQueue() {
           <p className="muted">Oldest first within each lane. {rows.length} open projects across all clients.</p>
         </div>
       </div>
+      {rows.length === 0 && (
+        <div className="callout">
+          <p>
+            No open work yet. New briefs from clients land here, oldest first. To see what a client sees, open{" "}
+            <Link href="/app">the client side</Link> and create a test workspace.
+          </p>
+        </div>
+      )}
       {mine.length > 0 && (
         <section className="panel">
           <h2>Assigned to you</h2>

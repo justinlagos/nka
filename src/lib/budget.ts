@@ -2,7 +2,7 @@
 // A credit that is still unused after its rollover window has passed can be expired.
 
 export type LedgerEntry = {
-  kind: "allocation" | "top_up" | "spend" | "refund" | "expiry" | "adjustment";
+  kind: "allocation" | "top_up" | "spend" | "refund" | "expiry" | "adjustment" | "payout";
   amount: number;
   effective_on: string; // YYYY-MM-DD
 };
@@ -14,6 +14,7 @@ export type BudgetSummary = {
   credited: number;
   spent: number;
   expired: number;
+  paidOut: number; // unused budget paid back to the client
   lots: CreditLot[];
   expirable: number; // unused credit already past its window
   expiringSoon: number; // unused credit whose window ends within 30 days
@@ -40,6 +41,7 @@ export function summariseBudget(entries: LedgerEntry[], rolloverMonths: number, 
   let credited = 0;
   let spent = 0;
   let expired = 0;
+  let paidOut = 0;
   let unappliedDebit = 0;
 
   const draw = (amount: number) => {
@@ -64,6 +66,7 @@ export function summariseBudget(entries: LedgerEntry[], rolloverMonths: number, 
     } else {
       const debit = -amount;
       if (e.kind === "expiry") expired += debit;
+      else if (e.kind === "payout") paidOut += debit;
       else spent += debit;
       unappliedDebit = round(unappliedDebit + draw(debit));
     }
@@ -83,10 +86,11 @@ export function summariseBudget(entries: LedgerEntry[], rolloverMonths: number, 
   }
 
   return {
-    balance: round(credited - spent - expired),
+    balance: round(credited - spent - expired - paidOut),
     credited: round(credited),
     spent: round(spent),
     expired: round(expired),
+    paidOut: round(paidOut),
     lots,
     expirable: round(expirable),
     expiringSoon: round(expiringSoon),

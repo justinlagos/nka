@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/Wordmark";
-import { NAV, SITE } from "@/content/site";
+import { CONTACT, NAV, SITE } from "@/content/site";
 
 export function SiteHeader({ signedIn }: { signedIn: boolean }) {
   return (
@@ -20,8 +20,8 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
           <Link href={signedIn ? "/app" : "/signin"} className="link-quiet">
             {signedIn ? "Workspace" : "Sign in"}
           </Link>
-          <Link href="/book" className="btn btn-small">
-            Book a call
+          <Link href="/demo" className="btn btn-small">
+            Book a demo
           </Link>
         </div>
       </div>
@@ -43,13 +43,20 @@ export function SiteFooter() {
           <Link href="/how-it-works">How it works</Link>
           <Link href="/pricing">Pricing</Link>
           <Link href="/about">About</Link>
-          <Link href="/book">Book a call</Link>
+          <Link href="/demo">Book a demo</Link>
           <Link href="/signin">Sign in</Link>
         </nav>
         <nav aria-label="Legal" className="footer-links">
           <Link href="/legal/terms">Terms</Link>
           <Link href="/legal/privacy">Privacy</Link>
         </nav>
+        {(CONTACT.email || CONTACT.phone) && (
+          <p className="footer-contact">
+            {CONTACT.email && <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>}
+            {CONTACT.email && CONTACT.phone ? " · " : ""}
+            {CONTACT.phone && <a href={CONTACT.phoneHref}>{CONTACT.phone}</a>}
+          </p>
+        )}
         <p className="footer-company">
           Nka is a studio of {SITE.company}. Company no. {SITE.companyNumber}. {SITE.registered}.
         </p>

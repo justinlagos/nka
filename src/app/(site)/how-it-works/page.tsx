@@ -111,8 +111,8 @@ export default function HowItWorks() {
             <Link href="/pricing" className="btn">
               See plans
             </Link>
-            <Link href="/book" className="btn btn-line">
-              Book a call
+            <Link href="/demo" className="btn btn-line">
+              Book a demo
             </Link>
           </div>
         </div>

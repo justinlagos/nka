@@ -60,7 +60,10 @@ export function AppShell({
         {profile.is_staff && (
           <>
             <div className="app-nav-label">Studio</div>
-            <AppNav items={STAFF_NAV} label="Studio" />
+            <AppNav
+              items={current ? STAFF_NAV : [...STAFF_NAV, { href: "/app/onboarding", label: "Try the client side", exact: true }]}
+              label="Studio"
+            />
           </>
         )}
         <div className="app-side-foot">

@@ -2,12 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActionForm } from "@/components/ActionForm";
 import { ProjectList, type ProjectRow } from "@/components/ProjectList";
-import { addLedgerEntry, expireBudget, setPlan } from "../../actions";
+import { addLedgerEntry, expireBudget, setLead, setPlan } from "../../actions";
 import { requireStaff } from "@/lib/session";
 import { people, displayName } from "@/lib/data";
 import { FLEX, PLANS, planLabel } from "@/lib/plans";
 import { summariseBudget, type LedgerEntry } from "@/lib/budget";
-import { date, money } from "@/lib/format";
+import { date, dateTime, money } from "@/lib/format";
 
 export default async function Client({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -15,13 +15,20 @@ export default async function Client({ params }: { params: Promise<{ id: string 
   const { data: org } = await supabase.from("orgs").select("*").eq("id", id).maybeSingle();
   if (!org) notFound();
 
-  const [{ data: members }, { data: projects }, { data: ledger }, { data: book }] = await Promise.all([
+  const [{ data: members }, { data: projects }, { data: ledger }, { data: book }, { data: staffRows }, { data: leadRows }] = await Promise.all([
     supabase.from("org_members").select("user_id, role").eq("org_id", id),
     supabase.from("projects").select("id, number, title, status, deadline, estimate_due, updated_at").eq("org_id", id).order("updated_at", { ascending: false }).limit(100),
     supabase.from("budget_ledger").select("id, kind, amount, effective_on, note").eq("org_id", id).order("effective_on", { ascending: false }),
     supabase.from("brand_books").select("about, updated_at").eq("org_id", id).maybeSingle(),
+    supabase.from("profiles").select("id, full_name, email").eq("is_staff", true).order("full_name"),
+    supabase.from("lead_changes").select("id, from_user, to_user, note, created_at").eq("org_id", id).order("created_at", { ascending: false }).limit(20),
   ]);
-  const who = await people(supabase, (members ?? []).map((m) => m.user_id));
+  const leads = leadRows ?? [];
+  const who = await people(supabase, [
+    ...(members ?? []).map((m) => m.user_id),
+    org.lead_id,
+    ...leads.flatMap((l) => [l.from_user, l.to_user]),
+  ]);
   const today = new Date().toISOString().slice(0, 10);
   const budget = summariseBudget((ledger ?? []) as LedgerEntry[], org.rollover_months, today);
 
@@ -58,6 +65,10 @@ export default async function Client({ params }: { params: Promise<{ id: string 
                   <span>Spent</span>
                 </div>
                 <div className="stat">
+                  <b>{money(budget.paidOut, org.currency)}</b>
+                  <span>Paid back</span>
+                </div>
+                <div className="stat">
                   <b>{money(budget.expirable, org.currency)}</b>
                   <span>Past rollover, unused</span>
                 </div>
@@ -88,6 +99,54 @@ export default async function Client({ params }: { params: Promise<{ id: string 
           )}
         </div>
         <aside>
+          <section className="panel">
+            <h2>Lead designer</h2>
+            <p className="small">
+              {org.lead_id
+                ? `${displayName(who.get(org.lead_id))}, since ${date(org.lead_since)}. New briefs go to them.`
+                : "Nobody named yet. Name one before the first brief: the client sees who it is."}
+            </p>
+            <ActionForm action={setLead} submit={org.lead_id ? "Change lead" : "Name lead"} pending="Saving" buttonClass="btn btn-small">
+              <input type="hidden" name="org" value={org.id} />
+              <label className="field">
+                <span>Designer</span>
+                <select name="lead" defaultValue={org.lead_id ?? ""} required>
+                  <option value="" disabled>
+                    Choose
+                  </option>
+                  {(staffRows ?? []).map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.full_name || s.email}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {org.lead_id && (
+                <label className="field">
+                  <span>Handover note for the client</span>
+                  <textarea
+                    name="note"
+                    rows={3}
+                    maxLength={2000}
+                    placeholder="Why the change, and what the new designer has been told about your brand and open work."
+                  />
+                  <span className="hint">Required when changing. The client sees it on their home page.</span>
+                </label>
+              )}
+            </ActionForm>
+            {leads.length > 0 && (
+              <ul className="events" style={{ marginTop: 12 }}>
+                {leads.map((l) => (
+                  <li key={l.id}>
+                    <b>{l.from_user ? `${displayName(who.get(l.from_user))} to ` : ""}{displayName(who.get(l.to_user))}</b>
+                    {l.note ? `: ${l.note}` : ""}
+                    <br />
+                    <span className="small">{dateTime(l.created_at)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
           <section className="panel">
             <h2>Plan</h2>
             <ActionForm action={setPlan} submit="Save plan" pending="Saving" buttonClass="btn btn-small">
@@ -150,6 +209,7 @@ export default async function Client({ params }: { params: Promise<{ id: string 
                     <option value="refund">Refund</option>
                     <option value="spend">Spend</option>
                     <option value="adjustment">Adjustment (+/-)</option>
+                    <option value="payout">Paid back to client</option>
                   </select>
                 </label>
                 <label className="field">
@@ -168,6 +228,9 @@ export default async function Client({ params }: { params: Promise<{ id: string 
                 </label>
               </div>
             </ActionForm>
+            <p className="hint">
+              When a Flex client leaves, refund their balance in Stripe, then record the same amount here as Paid back.
+            </p>
             <div style={{ marginTop: 12 }}>
               <ActionForm action={expireBudget} submit="Expire unused budget past rollover" pending="Checking" buttonClass="btn btn-small btn-line">
                 <input type="hidden" name="org" value={org.id} />

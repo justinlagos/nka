@@ -9,6 +9,7 @@ import { draftBrief } from "@/lib/ai";
 import { notifyStudio } from "@/lib/notify";
 import { siteOrigin } from "@/lib/origin";
 import { getStripe, priceForPlan } from "@/lib/stripe";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { planById, type PlanId } from "@/lib/plans";
 import { projectRef } from "@/lib/format";
 
@@ -358,6 +359,26 @@ export async function acceptInvite(_prev: ActionState, form: FormData): Promise<
   redirect("/app");
 }
 
+// ---------- Resizes ----------
+
+export async function requestResize(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const { supabase } = await requireProfile();
+  const id = str(form.get("id"), 64);
+  if (!isUuid(id)) return { ok: false, error: "File not found." };
+  const sizes = str(form.get("sizes"), 2000);
+  if (!sizes) return { ok: false, error: "List the sizes or formats you need." };
+  const { data, error } = await supabase.rpc("request_resize", { p_deliverable: id, p_sizes: sizes });
+  if (error) return fail(error);
+  const m = await getCurrentMembership();
+  await notifyStudio(`Resize request from ${m?.org.name ?? "a client"}`, [
+    `${await siteOrigin()}/app/projects/${data}`,
+    "",
+    sizes,
+  ]);
+  revalidatePath("/app", "layout");
+  redirect(`/app/projects/${data}?sent=resize`);
+}
+
 // ---------- Billing ----------
 
 export async function startCheckout(_prev: ActionState, form: FormData): Promise<ActionState> {
@@ -368,7 +389,7 @@ export async function startCheckout(_prev: ActionState, form: FormData): Promise
   const plan = planById(str(form.get("plan"), 20));
   if (!plan) return { ok: false, error: "Choose a plan." };
   const stripe = getStripe();
-  if (!stripe) return { ok: false, error: "Card payments aren't switched on yet. Book a call and we'll set your plan up." };
+  if (!stripe) return { ok: false, error: "Card payments aren't switched on yet. Message the studio and we'll set your plan up." };
 
   let url: string | null = null;
   try {
@@ -394,6 +415,62 @@ export async function startCheckout(_prev: ActionState, form: FormData): Promise
   }
   if (!url) return { ok: false, error: "Stripe couldn't start checkout." };
   redirect(url);
+}
+
+async function recordPlanStatus(orgId: string, status: "paused" | "active") {
+  try {
+    const { error } = await supabaseAdmin().from("orgs").update({ plan_status: status }).eq("id", orgId);
+    if (error) console.error("Plan status not saved; the webhook will catch up", error.message);
+  } catch (err) {
+    console.error("Plan status not saved; the webhook will catch up", err);
+  }
+}
+
+// Pause a card plan for up to a month: no charge, nothing new starts, work already started is finished.
+export async function pausePlan(_prev: ActionState, _form: FormData): Promise<ActionState> {
+  const { supabase } = await requireProfile();
+  const m = await getCurrentMembership();
+  if (!m) return { ok: false, error: "No organisation selected." };
+  if (m.role !== "owner" && m.role !== "admin") return { ok: false, error: "Only an owner or admin can pause the plan." };
+  const stripe = getStripe();
+  if (!stripe) return { ok: false, error: "Billing isn't switched on yet." };
+  const { data: o } = await supabase.from("orgs").select("stripe_subscription_id, plan_status").eq("id", m.org.id).single();
+  if (!o?.stripe_subscription_id) return { ok: false, error: "Only card plans can be paused here. Message the studio to pause another plan." };
+  if (o.plan_status !== "active") return { ok: false, error: "Only an active plan can be paused." };
+  const resumes = new Date(Date.now() + 30 * 86_400_000);
+  try {
+    await stripe.subscriptions.update(o.stripe_subscription_id, {
+      pause_collection: { behavior: "void", resumes_at: Math.floor(resumes.getTime() / 1000) },
+    });
+  } catch (err) {
+    console.error("Pause failed", err);
+    return { ok: false, error: "Stripe couldn't pause the plan. Try again shortly." };
+  }
+  // Show it straight away; the Stripe webhook confirms the same thing.
+  await recordPlanStatus(m.org.id, "paused");
+  revalidatePath("/app", "layout");
+  return done(`Paused. No charge until ${resumes.toLocaleDateString("en-GB", { day: "numeric", month: "long" })}.`);
+}
+
+export async function resumePlan(_prev: ActionState, _form: FormData): Promise<ActionState> {
+  const { supabase } = await requireProfile();
+  const m = await getCurrentMembership();
+  if (!m) return { ok: false, error: "No organisation selected." };
+  if (m.role !== "owner" && m.role !== "admin") return { ok: false, error: "Only an owner or admin can resume the plan." };
+  const stripe = getStripe();
+  if (!stripe) return { ok: false, error: "Billing isn't switched on yet." };
+  const { data: o } = await supabase.from("orgs").select("stripe_subscription_id").eq("id", m.org.id).single();
+  if (!o?.stripe_subscription_id) return { ok: false, error: "Message the studio to resume this plan." };
+  try {
+    await stripe.subscriptions.update(o.stripe_subscription_id, { pause_collection: "" });
+  } catch (err) {
+    console.error("Resume failed", err);
+    return { ok: false, error: "Stripe couldn't resume the plan. Try again shortly." };
+  }
+  // Resuming starts any queued briefs that now fit.
+  await recordPlanStatus(m.org.id, "active");
+  revalidatePath("/app", "layout");
+  return done("Resumed. Queued briefs start now.");
 }
 
 export async function openBillingPortal(_prev: ActionState, _form: FormData): Promise<ActionState> {

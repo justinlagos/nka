@@ -108,6 +108,17 @@ export async function setPlan(_prev: ActionState, form: FormData): Promise<Actio
   return done("Plan saved.");
 }
 
+export async function setLead(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const { supabase } = await requireStaff();
+  const org = str(form.get("org"), 64);
+  const lead = str(form.get("lead"), 64);
+  if (!lead) return { ok: false, error: "Choose a designer." };
+  const { error } = await supabase.rpc("staff_set_lead", { p_org: org, p_user: lead, p_note: str(form.get("note"), 2000) });
+  if (error) return fail(error);
+  refresh(undefined, org);
+  return done("Lead saved. Open work has moved to them.");
+}
+
 export async function addLedgerEntry(_prev: ActionState, form: FormData): Promise<ActionState> {
   const { supabase } = await requireStaff();
   const org = str(form.get("org"), 64);
@@ -115,7 +126,7 @@ export async function addLedgerEntry(_prev: ActionState, form: FormData): Promis
   const raw = num(form.get("amount"));
   if (raw === null || Number.isNaN(raw) || raw === 0) return { ok: false, error: "Enter an amount." };
   // Staff type positive numbers; the sign follows the kind.
-  const amount = ["spend", "expiry"].includes(kind) ? -Math.abs(raw) : ["allocation", "top_up", "refund"].includes(kind) ? Math.abs(raw) : raw;
+  const amount = ["spend", "expiry", "payout"].includes(kind) ? -Math.abs(raw) : ["allocation", "top_up", "refund"].includes(kind) ? Math.abs(raw) : raw;
   const effective = str(form.get("effective"), 10);
   const { error } = await supabase.rpc("staff_ledger_entry", {
     p_org: org,

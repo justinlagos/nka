@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { ActionForm } from "@/components/ActionForm";
-import { openBillingPortal, startCheckout } from "../actions";
+import { openBillingPortal, pausePlan, resumePlan, startCheckout } from "../actions";
+import { ContactLine } from "@/components/ContactLine";
 import { canAdmin, requireMembership } from "@/lib/session";
-import { FLEX, PLANS, planLabel } from "@/lib/plans";
+import { PLANS, planLabel } from "@/lib/plans";
 import { summariseBudget, type LedgerEntry } from "@/lib/budget";
 import { date, money } from "@/lib/format";
 import { getStripe } from "@/lib/stripe";
@@ -14,6 +15,7 @@ const KIND: Record<string, string> = {
   refund: "Refund",
   expiry: "Expired",
   adjustment: "Adjustment",
+  payout: "Paid back to you",
 };
 
 export default async function Billing({ searchParams }: { searchParams: Promise<{ plan?: string; checkout?: string }> }) {
@@ -21,7 +23,9 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
   const { plan: wanted, checkout } = await searchParams;
   const admin = canAdmin(role);
   const cardsOn = Boolean(getStripe());
-  const onCardPlan = ["starter", "growth", "studio"].includes(org.plan) && ["active", "trialing", "past_due"].includes(org.plan_status);
+  const onCardPlan =
+    ["starter", "growth", "studio"].includes(org.plan) && ["active", "trialing", "past_due", "paused"].includes(org.plan_status);
+  const offered = PLANS.find((p) => p.id === wanted);
   const today = new Date().toISOString().slice(0, 10);
 
   const { data: ledger } =
@@ -61,11 +65,40 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
       {onCardPlan && (
         <section className="panel">
           <h2>Manage your plan</h2>
-          <p>Change plan, update your card, download invoices or cancel. Changes apply from your next billing date.</p>
+          <p>
+            Change plan, update your card, download invoices or cancel. No notice period and no exit fee; a cancellation takes
+            effect at the end of the month you&apos;ve paid for.
+          </p>
           {admin ? (
             <ActionForm action={openBillingPortal} submit="Open billing" pending="Opening" buttonClass="btn btn-ink" />
           ) : (
             <p className="muted small">Only an owner or admin can manage billing.</p>
+          )}
+        </section>
+      )}
+
+      {onCardPlan && admin && (
+        <section className="panel">
+          <h2>{org.plan_status === "paused" ? "Your plan is paused" : "Quiet month coming?"}</h2>
+          {org.plan_status === "paused" ? (
+            <>
+              <p>No charges while paused. New briefs wait in your queue and start when you resume.</p>
+              <ActionForm action={resumePlan} submit="Resume now" pending="Resuming" buttonClass="btn btn-small" />
+            </>
+          ) : (
+            <>
+              <p>
+                Pause for up to a month instead of paying for it. Work already started is finished; new briefs wait in your
+                queue. It resumes by itself.
+              </p>
+              <ActionForm
+                action={pausePlan}
+                submit="Pause for a month"
+                pending="Pausing"
+                buttonClass="btn btn-small btn-line"
+                confirm="Pause your plan for up to a month? You can resume any time."
+              />
+            </>
           )}
         </section>
       )}
@@ -91,8 +124,8 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
             <span style={{ width: `${budget.credited > 0 ? Math.min(100, Math.max(0, (budget.spent / budget.credited) * 100)) : 0}%` }} />
           </div>
           <p className="small muted">
-            Unused monthly budget rolls over for {org.rollover_months} months. To top up, message the studio from any project or{" "}
-            <Link href="/book?interest=flex">book a call</Link>.
+            Unused budget carries over for {org.rollover_months} months. If you leave, we pay back what&apos;s left. To top up or
+            ask for a payback, message the studio from any project.
           </p>
           <div className="table-scroll">
             <table className="table">
@@ -121,40 +154,45 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
 
       {!onCardPlan && org.plan !== "flex" && org.plan !== "bespoke" && (
         <section className="panel">
-          <h2>Choose a plan</h2>
-          {!cardsOn && (
-            <div className="callout callout-warn">
-              <p>
-                Card payments aren&apos;t switched on yet. <Link href="/book?interest=plan">Book a call</Link> and we&apos;ll set
-                your plan up.
-              </p>
-            </div>
-          )}
-          {!admin && <p className="muted">Only an owner or admin can choose a plan.</p>}
-          <div className="plans" style={{ marginTop: 12 }}>
-            {PLANS.map((p) => (
-              <div key={p.id} className={`plan ${wanted === p.id ? "plan-feature" : ""}`}>
-                <div className="plan-name">{p.name}</div>
-                <div className="plan-price">
-                  {money(p.monthlyGbp)} <small>a month</small>
+          <h2>Start your plan</h2>
+          {offered ? (
+            <>
+              <p>This is the plan we agreed with you.</p>
+              <div className="plans" style={{ marginTop: 12 }}>
+                <div className="plan plan-feature">
+                  <div className="plan-name">{offered.name}</div>
+                  <div className="plan-price">
+                    {money(offered.monthlyGbp)} <small>a month</small>
+                  </div>
+                  <ul>
+                    {offered.includes.map((x) => (
+                      <li key={x}>{x}</li>
+                    ))}
+                  </ul>
+                  {admin && cardsOn ? (
+                    <ActionForm action={startCheckout} submit={`Start ${offered.name}`} pending="Opening Stripe" buttonClass="btn">
+                      <input type="hidden" name="plan" value={offered.id} />
+                    </ActionForm>
+                  ) : (
+                    <p className="muted small">
+                      {admin ? "Card payments aren't switched on yet. Message the studio." : "Only an owner or admin can start a plan."}
+                    </p>
+                  )}
                 </div>
-                <ul>
-                  {p.includes.slice(0, 3).map((x) => (
-                    <li key={x}>{x}</li>
-                  ))}
-                </ul>
-                {admin && cardsOn && (
-                  <ActionForm action={startCheckout} submit={`Choose ${p.name}`} pending="Opening Stripe" buttonClass={`btn ${wanted === p.id ? "" : "btn-line"}`}>
-                    <input type="hidden" name="plan" value={p.id} />
-                  </ActionForm>
-                )}
               </div>
-            ))}
-          </div>
-          <p className="small muted" style={{ marginTop: 18 }}>
-            Monthly, billed in pounds by Stripe. Any major card. Need {FLEX.name}, invoicing or naira?{" "}
-            <Link href="/book?interest=flex">Book a call</Link>.
-          </p>
+              <p className="small muted" style={{ marginTop: 18 }}>
+                Monthly, by any major card through Stripe. Cancel or pause from this page any month.
+              </p>
+            </>
+          ) : (
+            <>
+              <p>
+                Your plan and monthly price are agreed with you on a short call, then sent in writing. When you&apos;re ready, we
+                send a link that opens your plan here. Until then you can send briefs; we&apos;ll quote each one before starting.
+              </p>
+              <ContactLine lead="Want to talk now?" />
+            </>
+          )}
         </section>
       )}
 

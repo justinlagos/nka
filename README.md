@@ -8,14 +8,26 @@ Clients subscribe to a plan (or a Flex budget), send briefs, approve estimates, 
 
 | Area | Path | What it does |
 |---|---|---|
-| Public site | `src/app/(site)` | Home, services (8 pages), work, how it works, pricing, about, book a call, terms, privacy |
-| Sign in | `src/app/signin`, `src/app/auth` | Passwordless email link (Supabase Auth) |
+| Public site | `src/app/(site)` | Home, services (8 pages), work, how it works, pricing (no public prices), about, terms, privacy |
+| Book a demo | `src/app/(site)/demo` | Four questions, then an email code. Builds the client's workspace (brand basics, named designer, first brief drafted) before the call |
+| Sign in | `src/app/signin`, `src/app/auth` | Email code that works on any device, plus a link (Supabase Auth) |
 | Client workspace | `src/app/app` | Home, projects, brief assistant, brief editor, project page with review, library, brand book, billing, team, invites |
 | Studio admin | `src/app/admin` | Queue by lane, clients with plan and Flex budget controls, call requests |
 | Stripe webhook | `src/app/api/stripe/webhook` | Keeps each organisation's plan in step with Stripe |
 | Database | `supabase/migrations` | Tables, row-level security and workflow functions |
 
 Plans, prices and limits live in `src/lib/plans.ts` only. Services, work and FAQs live in `src/content`.
+
+## Promises the product enforces
+
+Each answers a common complaint about design subscriptions (see `PROMISES` in `src/content/site.ts`):
+
+- **One named designer** per client (`orgs.lead_id`). Changing them needs a written handover note the client sees.
+- **Fixed prices.** An approved estimate can't be changed.
+- **Free resizes.** Clients ask from the library; it starts at once and doesn't use a request slot.
+- **Dates you can check.** Each project shows the agreed date and whether first files arrived on time; the client home shows the on-time record.
+- **Leave or pause any month.** Pause stops Stripe collection for up to a month; new briefs queue meanwhile.
+- **Unused Flex budget is yours.** It carries over 12 months; staff record a payout when a client leaves.
 
 ## How the work flows
 
@@ -37,12 +49,17 @@ All status changes run through database functions that check who is asking, so a
 
 ### Going live
 
+- **Supabase** > Authentication > Emails: paste the templates in `supabase/email-templates.md` into "Magic link" and "Confirm signup". They add the sign-in code and a link that works on any device.
+- **Contact details**: set `NEXT_PUBLIC_CONTACT_EMAIL` and `NEXT_PUBLIC_CONTACT_PHONE` in Vercel. Blank values are hidden.
+- **Plans**: prices aren't shown publicly. After the demo call, send the client `https://<your-domain>/app/billing?plan=growth` (or `starter`, `studio`) to start that plan by card.
+
 - **Supabase** > Authentication > URL configuration: set Site URL to the live address and add `https://<your-domain>/auth/callback` to redirect URLs. Set up custom SMTP (Resend works) so sign-in emails aren't rate-limited.
 - **Stripe**: add `STRIPE_SECRET_KEY`. The three plan prices are created automatically on the first checkout (lookup keys `nka_*_monthly_gbp`). Save the Customer portal settings once in the Dashboard. Add a webhook to `https://<your-domain>/api/stripe/webhook` for `checkout.session.completed` and `customer.subscription.created`, `.updated`, `.deleted`, and put its signing secret in `STRIPE_WEBHOOK_SECRET`. The webhook also needs `SUPABASE_SECRET_KEY`.
 
 ## Checks
 
 - `npm test`: budget maths, brief layout, plan mapping, formatting.
+- `tests/db/trust.sql` (20 checks: lead designer, resizes, pause, payouts, invites) and `tests/db/demo.sql` (9 checks: demo setup).
 - `tests/db/workflow.sql`: 33 checks of roles, invites, estimates, Flex budget, versions, review, plan caps and the queue, leads, and isolation between clients. Runs in one transaction and rolls back.
 - `npm run build`
 
