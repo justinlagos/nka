@@ -103,7 +103,7 @@ export default function Pricing() {
           <div>
             <h2 className="h1">Get your price in writing.</h2>
             <p className="muted" style={{ marginTop: 16 }}>
-              Four questions, a workspace ready to use, and a 20-minute call. No card needed.
+              Two quick steps, a workspace in your brand, and a 20-minute call. No card needed.
             </p>
           </div>
           <div className="hero-actions" style={{ marginTop: 0 }}>

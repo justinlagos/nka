@@ -5,6 +5,9 @@ import { deleteDraft, removeAttachment, saveBrief } from "../../../actions";
 import { requireProfile, getMemberships } from "@/lib/session";
 import { BRIEF_FIELDS, SERVICE_OPTIONS, normaliseBrief } from "@/lib/brief";
 import { fileSize, projectRef } from "@/lib/format";
+import { instantStatus } from "@/lib/instant";
+
+export const maxDuration = 300;
 
 export default async function EditBrief({
   params,
@@ -34,6 +37,7 @@ export default async function EditBrief({
     .eq("project_id", id)
     .order("created_at");
   const isMember = memberships.some((m) => m.org.id === p.org_id);
+  const instant = await instantStatus(supabase, p.org_id);
 
   return (
     <div style={{ maxWidth: 820 }}>
@@ -62,7 +66,16 @@ export default async function EditBrief({
       )}
 
       <section className="panel">
-        <ActionForm action={saveBrief} submit="Send to the studio" pending="Working" submitValue="send" secondary={{ label: "Save draft", value: "save" }}>
+        <ActionForm
+          action={saveBrief}
+          submit="Send to my designer"
+          pending="Working"
+          submitValue="send"
+          secondary={[
+            ...(instant.on && instant.left > 0 ? [{ label: "Make it now with AI", value: "instant" }] : []),
+            { label: "Save draft", value: "save" },
+          ]}
+        >
           <input type="hidden" name="id" value={p.id} />
           <label className="field">
             <span>Project title</span>

@@ -7,6 +7,7 @@ import { ORG_COOKIE, getCurrentMembership, getMemberships, requireProfile } from
 import { briefFromForm, brandBookText, emptyBrief, SERVICE_OPTIONS } from "@/lib/brief";
 import { draftBrief } from "@/lib/ai";
 import { notifyStudio } from "@/lib/notify";
+import { sendBrief } from "./brief-actions";
 import { siteOrigin } from "@/lib/origin";
 import { getStripe, priceForPlan } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
@@ -152,22 +153,14 @@ export async function saveBrief(_prev: ActionState, form: FormData): Promise<Act
   if (error) return fail(error);
   if (!updated) return { ok: false, error: "This brief has been sent and can't be edited. Add a comment on the project instead." };
 
-  if (str(form.get("intent"), 10) !== "send") {
+  if (!["send", "instant"].includes(str(form.get("intent"), 10))) {
     revalidatePath(`/app/projects/${id}`);
     return done("Draft saved.");
   }
   if (!brief.summary) return { ok: false, error: "Fill in 'What you need' before sending." };
-  const { data: status, error: sendError } = await supabase.rpc("submit_project", { p_project: id });
-  if (sendError) return fail(sendError);
-  const m = await getCurrentMembership();
-  await notifyStudio(`New brief: ${projectRef(updated.number)} ${updated.title}`, [
-    `From ${m?.org.name ?? "a client"}${status === "queued" ? " (queued behind their active requests)" : ""}`,
-    `${await siteOrigin()}/app/projects/${id}`,
-    "",
-    brief.summary,
-  ]);
-  revalidatePath("/app", "layout");
-  redirect(`/app/projects/${id}?sent=1`);
+  const r = await sendBrief(id, str(form.get("intent"), 10) === "instant" ? "instant" : "designer");
+  if (!r.ok) return { ok: false, error: r.error };
+  redirect(r.path!);
 }
 
 export async function deleteDraft(form: FormData) {
@@ -224,6 +217,11 @@ export async function decideFile(input: { deliverableId: string; projectId: stri
     p_note: input.note.slice(0, 5000),
   });
   if (error) return fail(error);
+  const { data: p } = await supabase.from("projects").select("number, title").eq("id", input.projectId).maybeSingle();
+  await notifyStudio(
+    `${input.decision === "approved" ? "Approved" : "Changes requested"}: ${p ? projectRef(p.number) : ""} ${p?.title ?? ""}`,
+    [input.note || "", `${await siteOrigin()}/app/projects/${input.projectId}`].filter(Boolean),
+  );
   revalidatePath(`/app/projects/${input.projectId}`);
   return done(input.decision === "approved" ? "Approved." : "Changes sent to the studio.");
 }

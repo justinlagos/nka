@@ -54,3 +54,17 @@ export function onTimeRecord(rows: { due: string | null; firstDelivered: string 
   }
   return { onTime, total };
 }
+
+// The date `days` working days (Mon to Fri) after `from`. Bank holidays aren't counted.
+export function addWorkingDays(from: string, days: number): string {
+  const d = new Date(`${from}T00:00:00Z`);
+  let left = Math.max(0, Math.round(days));
+  while (left > 0) {
+    d.setUTCDate(d.getUTCDate() + 1);
+    const wd = d.getUTCDay();
+    if (wd !== 0 && wd !== 6) left -= 1;
+  }
+  // A Saturday or Sunday start with 0 days lands on Monday.
+  while (d.getUTCDay() === 0 || d.getUTCDay() === 6) d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}

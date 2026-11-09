@@ -18,6 +18,17 @@ Clients subscribe to a plan (or a Flex budget), send briefs, approve estimates, 
 
 Plans, prices and limits live in `src/lib/plans.ts` only. Services, work and FAQs live in `src/content`.
 
+## Automation
+
+- **Website to brand book** (`src/lib/brand-scan.ts`, `brand-sync.ts`): reads logo, colours, fonts, what they do and their tone from a client's site. Runs in the demo and from the brand book page.
+- **Talk-to-brief** (`src/components/BriefChat.tsx`): one line or a voice note, at most two tap-to-answer questions, then the brief is written.
+- **Two ways to send**: Instant (AI makes three options in about a minute, monthly cap per plan in `instant_limit`) or Designer.
+- **Instant date** (`src/lib/automation.ts`): every designer brief is sized when sent; the client sees an expected date, the studio's estimate is pre-filled, and paid-up plan clients start automatically.
+- **Early directions**: three AI concept images on designer briefs while the designer starts.
+- **Emails**: the client hears when work starts, when an estimate or file is ready, and gets a reminder after two days; the studio gets client decisions and a weekday list of late work (`/api/cron/daily`).
+
+Needs in Vercel: `OPENAI_API_KEY` (images; model in `IMAGE_MODEL`, default `gpt-image-2`), `RESEND_API_KEY` and `NKA_NOTIFY_EMAIL` (emails), `CRON_SECRET` (reminders). Optional `STUDIO_HOURLY_RATE` pre-fills estimate amounts for non-plan clients.
+
 ## Promises the product enforces
 
 Each answers a common complaint about design subscriptions (see `PROMISES` in `src/content/site.ts`):

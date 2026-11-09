@@ -16,7 +16,15 @@ export async function StaffPanel({
   project,
   staff,
 }: {
-  project: { id: string; orgId: string; status: string; assignee: string | null; plan: string; currency: string };
+  project: {
+    id: string;
+    orgId: string;
+    status: string;
+    assignee: string | null;
+    plan: string;
+    currency: string;
+    suggested?: { hours: number | null; due: string | null; amount: number | null; notes: string } | null;
+  };
   staff: { id: string; full_name: string; email: string }[];
 }) {
   const supabase = await supabaseServer();
@@ -35,27 +43,34 @@ export async function StaffPanel({
           </summary>
           <ActionForm action={sendEstimate} submit={onPlan ? "Confirm and start" : "Send estimate"} pending="Sending" buttonClass="btn btn-small">
             <input type="hidden" name="id" value={project.id} />
+            {project.suggested?.due && <p className="small muted">Pre-filled by Nka from the brief. Check it, change anything, then send.</p>}
             {onPlan ? (
               <p className="small muted">Plan client: the amount isn&apos;t charged; work starts as soon as you confirm.</p>
             ) : (
               <label className="field">
                 <span>Amount ({project.currency.toUpperCase()})</span>
-                <input type="number" name="amount" min={0} step="0.01" required />
+                <input type="number" name="amount" min={0} step="0.01" required defaultValue={project.suggested?.amount ?? undefined} />
               </label>
             )}
             <div className="row-2">
               <label className="field">
                 <span>Hours</span>
-                <input type="number" name="hours" min={0} step="0.5" />
+                <input type="number" name="hours" min={0} step="0.5" defaultValue={project.suggested?.hours ?? undefined} />
               </label>
               <label className="field">
                 <span>Delivery date</span>
-                <input type="date" name="due" required />
+                <input type="date" name="due" required defaultValue={project.suggested?.due ?? undefined} />
               </label>
             </div>
             <label className="field">
               <span>Scope and notes</span>
-              <textarea name="notes" rows={3} maxLength={4000} placeholder="What's included, rounds of changes, assumptions" />
+              <textarea
+                name="notes"
+                rows={3}
+                maxLength={4000}
+                defaultValue={project.suggested?.notes || undefined}
+                placeholder="What's included, rounds of changes, assumptions"
+              />
             </label>
           </ActionForm>
         </details>

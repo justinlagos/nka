@@ -18,6 +18,9 @@ export function serverEnv() {
     anthropicModel: process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5",
     anthropicWorkspace: process.env.ANTHROPIC_WORKSPACE_ID ?? "",
     resendKey: process.env.RESEND_API_KEY ?? "",
+    openaiKey: process.env.OPENAI_API_KEY ?? "",
+    imageModel: process.env.IMAGE_MODEL || "gpt-image-2",
+    cronSecret: process.env.CRON_SECRET ?? "",
     fromEmail: process.env.NKA_FROM_EMAIL || "Nka Studio <nka.studio@motionplaylabs.com>",
     notifyEmail: process.env.NKA_NOTIFY_EMAIL ?? "",
   };

@@ -266,7 +266,7 @@ export default function Home() {
         <Image src={IMG.meeting.src} alt="" width={IMG.meeting.w} height={IMG.meeting.h} sizes="100vw" className="cta-bg" />
         <div className="wrap cta-inner">
           <h2 className="h1">What&apos;s first on your list?</h2>
-          <p className="lede">Four questions. Your workspace is ready, with that first brief drafted, before we speak.</p>
+          <p className="lede">Say what you need and add your website. Your workspace opens in your brand, with that first brief written and ready to make.</p>
           <div className="hero-actions">
             <Link href="/demo" className="btn">
               Book a demo

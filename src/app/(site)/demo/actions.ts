@@ -3,7 +3,13 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getSession } from "@/lib/session";
-import { setUpFromDemo } from "@/lib/demo-setup";
+import { nameFromHost, setUpFromDemo } from "@/lib/demo-setup";
+
+const FREE_MAIL = /^(gmail|googlemail|yahoo|ymail|hotmail|outlook|live|msn|icloud|me|aol|proton|protonmail|gmx|zoho|mail)\./i;
+function companyFromEmail(email: string) {
+  const domain = email.split("@")[1] ?? "";
+  return domain && !FREE_MAIL.test(domain) ? nameFromHost(domain) : "";
+}
 import { notifyStudio } from "@/lib/notify";
 import { siteOrigin } from "@/lib/origin";
 import { VOLUMES, TEAM_SIZES } from "@/content/demo";
@@ -33,7 +39,7 @@ export async function startDemo(_prev: DemoState, form: FormData): Promise<DemoS
     call_time: clip(form.get("call_time"), 200),
   };
   if (d.first_need.length < 4) return err("Tell us what you need designed first.");
-  if (!d.company) return err("Add your company name.");
+  if (!d.company) d.company = (d.website && nameFromHost(d.website)) || companyFromEmail(d.email) || "My company";
   if (!d.full_name) return err("Add your name.");
   if (!EMAIL.test(d.email)) return err("Add a work email we can send your code to.");
   if (d.volume && !VOLUMES.some((v) => v.value === d.volume)) d.volume = "";

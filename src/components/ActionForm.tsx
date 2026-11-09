@@ -28,8 +28,9 @@ export function ActionForm({
   confirm?: string;
   // Sent as "intent" so one form can do two things (e.g. save or send).
   submitValue?: string;
-  secondary?: { label: string; value: string };
+  secondary?: { label: string; value: string } | { label: string; value: string }[];
 }) {
+  const extra = secondary ? (Array.isArray(secondary) ? secondary : [secondary]) : [];
   const [state, formAction] = useActionState(action, {} as ActionState);
   const ref = useRef<HTMLFormElement>(null);
 
@@ -49,7 +50,9 @@ export function ActionForm({
       {children}
       <div className="form-foot">
         <SubmitButton label={submit} pending={pending} className={buttonClass} value={submitValue} />
-        {secondary && <SubmitButton label={secondary.label} pending={pending} className="btn btn-line" value={secondary.value} />}
+        {extra.map((x) => (
+          <SubmitButton key={x.value} label={x.label} pending={pending} className="btn btn-line" value={x.value} />
+        ))}
         <p className={`form-result ${state.error ? "is-error" : ""}`} role="status" aria-live="polite">
           {state.error ?? (state.ok ? state.message ?? "" : "")}
         </p>

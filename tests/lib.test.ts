@@ -157,3 +157,40 @@ test("ontime: delivery against the agreed date", () => {
   assert.equal(ukDate("2026-11-09T23:30:00Z"), "2026-11-09");
   assert.equal(ukDate("2026-07-09T23:30:00Z"), "2026-07-10");
 });
+
+import { parseHtml, pickPalette, pickFonts, pickLogo, normaliseUrl } from "../src/lib/brand-scan.ts";
+import { addWorkingDays } from "../src/lib/ontime.ts";
+
+test("brand scan: reads title, logo, colours and fonts from a page", () => {
+  const html = `<html><head><title>Acme Foods | Snacks for offices</title>
+  <meta name="description" content="Office snack boxes in Lagos.">
+  <meta name="theme-color" content="#E0A526">
+  <link rel="apple-touch-icon" href="/apple.png">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+  <style>body{color:#111;background:#fff} .btn{background:#1A1B3A} .tag{color:#1a1b3a} h1{font-family:"Space Grotesk",sans-serif}</style>
+  </head><body><img class="site-logo" src="/img/acme-logo.svg" alt="Acme"><h1>Snacks that keep teams going</h1><script>var x="#00ff00"</script></body></html>`;
+  const f = parseHtml(html, "https://acme.example/");
+  assert.equal(f.title, "Acme Foods | Snacks for offices");
+  assert.equal(f.description, "Office snack boxes in Lagos.");
+  assert.equal(pickLogo(f.logoCandidates), "https://acme.example/img/acme-logo.svg");
+  const palette = pickPalette(f.css, f.themeColor);
+  assert.equal(palette[0], "#e0a526");
+  assert.ok(palette.includes("#1a1b3a"));
+  assert.ok(!palette.includes("#111111") && !palette.includes("#ffffff"));
+  assert.deepEqual(pickFonts(f.css, f.fontLinks), ["Space Grotesk"]);
+  assert.deepEqual(f.headings, ["Snacks that keep teams going"]);
+});
+
+test("brand scan: refuses private and odd addresses", () => {
+  assert.equal(normaliseUrl("acme.co.uk"), "https://acme.co.uk/");
+  assert.equal(normaliseUrl("http://localhost:3000"), null);
+  assert.equal(normaliseUrl("http://169.254.169.254/latest"), null);
+  assert.equal(normaliseUrl("ftp://acme.com"), null);
+  assert.equal(normaliseUrl("not a url"), null);
+});
+
+test("ontime: working days skip weekends", () => {
+  assert.equal(addWorkingDays("2026-11-13", 1), "2026-11-16"); // Fri + 1 = Mon
+  assert.equal(addWorkingDays("2026-11-09", 2), "2026-11-11"); // Mon + 2 = Wed
+  assert.equal(addWorkingDays("2026-11-14", 0), "2026-11-16"); // Sat lands on Mon
+});

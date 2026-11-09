@@ -5,6 +5,8 @@ import { StatusPill } from "@/components/StatusPill";
 import { ReviewFile, type ReviewComment } from "@/components/ReviewFile";
 import { StaffPanel } from "@/components/StaffPanel";
 import { addProjectComment, approveEstimate, cancelProject, completeProject, declineEstimate } from "../../actions";
+import { finishWithDesigner } from "../../brief-actions";
+import { AutoRefresh } from "@/components/AutoRefresh";
 import { getMemberships, requireProfile, canAdmin, canEdit, type Role } from "@/lib/session";
 import { signedUrls, people, displayName } from "@/lib/data";
 import { STATUS, STAGES, stageIndex, type ProjectStatus } from "@/lib/status";
@@ -35,7 +37,13 @@ const EVENT_TEXT: Record<string, (d: Record<string, unknown>) => string> = {
   deliverable_approved: (d) => `approved ${d.title} v${d.version}`,
   deliverable_changes_requested: (d) => `asked for changes to ${d.title} v${d.version}`,
   resize_requested: (d) => `asked for resizes of ${d.from} v${d.version}`,
+  auto_started: (d) => `started automatically, due ${date(String(d.due))}`,
+  instant_started: () => "asked for instant options",
+  instant_ready: (d) => `made ${d.count} instant options`,
+  instant_failed: () => "couldn't make instant options, so passed it to the studio",
 };
+
+export const maxDuration = 300;
 
 export default async function ProjectPage({
   params,
@@ -74,7 +82,7 @@ export default async function ProjectPage({
       .select("id, body, author, created_at, pin_x, pin_y, resolved, deliverable_id")
       .eq("project_id", id)
       .order("created_at"),
-    supabase.from("attachments").select("id, file_name, size, storage_path, mime").eq("project_id", id).order("created_at"),
+    supabase.from("attachments").select("id, file_name, size, storage_path, mime, kind").eq("project_id", id).order("created_at"),
     supabase.from("project_events").select("id, actor, kind, detail, created_at").eq("project_id", id).order("created_at", { ascending: false }).limit(40),
     staff
       ? supabase.from("profiles").select("id, full_name, email").eq("is_staff", true).order("full_name")
@@ -83,9 +91,18 @@ export default async function ProjectPage({
 
   const deliverables = (dRows ?? []) as Deliverable[];
   const comments = cRows ?? [];
-  const attachments = aRows ?? [];
+  const allAttachments = (aRows ?? []) as { id: string; file_name: string; size: number; storage_path: string; mime: string; kind?: string }[];
+  const attachments = allAttachments.filter((a) => a.kind !== "concept");
+  const concepts = allAttachments.filter((a) => a.kind === "concept");
   const events = eRows ?? [];
-  const urls = await signedUrls(supabase, [...deliverables.map((d) => d.storage_path), ...attachments.map((a) => a.storage_path)]);
+  const { data: source } = p.source_deliverable
+    ? await supabase.from("deliverables").select("title, storage_path, mime").eq("id", p.source_deliverable).maybeSingle()
+    : { data: null };
+  const urls = await signedUrls(supabase, [
+    ...deliverables.map((d) => d.storage_path),
+    ...allAttachments.map((a) => a.storage_path),
+    ...(source ? [source.storage_path] : []),
+  ]);
   const who = await people(supabase, [...comments.map((c) => c.author), ...events.map((e) => e.actor), p.assignee, p.approved_by]);
 
   // Latest version of each titled file first; older ones listed under it.
@@ -123,6 +140,10 @@ export default async function ProjectPage({
     ukDate(new Date()),
   );
   const isResize = p.kind === "resize";
+  const isInstant = p.kind === "instant";
+  const making = isInstant && status === "in_progress" && p.concepts_status === "pending";
+  const sizing = !isResize && !isInstant && ["submitted", "queued"].includes(status) && !p.sized_at;
+  const live = making || sizing || p.concepts_status === "pending";
 
   return (
     <>
@@ -137,7 +158,7 @@ export default async function ProjectPage({
         <StatusPill status={status} />
       </div>
 
-      {sent && sent !== "resize" && (
+      {sent === "1" && (
         <div className="callout">
           <p>
             {status === "queued"
@@ -147,6 +168,36 @@ export default async function ProjectPage({
         </div>
       )}
 
+      {live && <AutoRefresh />}
+      {(sent === "instant" || making) && (
+        <div className={`callout ${making ? "callout-live" : ""}`}>
+          <p>
+            {making
+              ? "Making three options from your brief and brand. This takes about a minute; this page updates by itself."
+              : "Instant brief sent."}
+          </p>
+        </div>
+      )}
+      {sent === "designer" && (
+        <div className="callout">
+          <p>
+            {status === "queued"
+              ? "Brief sent. Your plan's active requests are full, so this one is queued and starts automatically."
+              : status === "in_progress"
+                ? `Brief sent and started. First draft due ${date(p.estimate_due)}.`
+                : sizing
+                  ? "Brief sent. Working out your delivery date…"
+                  : "Brief sent. Your designer confirms the date within a working day."}
+          </p>
+        </div>
+      )}
+      {!p.estimate_due && p.suggested_due && !["completed", "cancelled"].includes(status) && (
+        <div className="expected">
+          <span className="expected-label">Expected first draft</span>
+          <b>{date(p.suggested_due)}</b>
+          <span className="small muted">Nka&apos;s estimate from your brief. Your designer confirms it.</span>
+        </div>
+      )}
       {isResize && !sent && (
         <div className="callout">
           <p>Free resize. It doesn&apos;t use one of your plan&apos;s request slots or any Flex budget.</p>
@@ -273,6 +324,74 @@ export default async function ProjectPage({
             )}
           </section>
 
+          {isInstant && deliverables.length > 0 && mayEdit && (
+            <section className="panel">
+              <h2>Want a designer to finish one?</h2>
+              <p className="muted">They start from the option you pick and make it properly: real fonts, exact copy, every size.</p>
+              <ActionForm action={finishWithDesigner} submit="Send to my designer" pending="Sending" buttonClass="btn btn-small">
+                <label className="field">
+                  <span>Option</span>
+                  <select name="deliverable" defaultValue={deliverables[0].id}>
+                    {deliverables.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="field">
+                  <span>Anything to change? (optional)</span>
+                  <input type="text" name="note" maxLength={1000} placeholder="Keep the layout, use our real logo, bigger headline" />
+                </label>
+              </ActionForm>
+            </section>
+          )}
+
+          {(concepts.length > 0 || (!isInstant && p.concepts_status === "pending")) && (
+            <section className="panel">
+              <h2>Early directions</h2>
+              <p className="muted">
+                Made by AI from your brief while your designer starts. Tell us which feels closest; the final work is designed by a
+                person.
+              </p>
+              {concepts.length === 0 ? (
+                <p className="small muted">Making three directions…</p>
+              ) : (
+                <div className="concepts">
+                  {concepts.map((c) => (
+                    <figure key={c.id}>
+                      {urls.get(c.storage_path) && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={urls.get(c.storage_path)} alt={c.file_name} loading="lazy" />
+                      )}
+                      <figcaption>
+                        <span>{c.file_name}</span>
+                        {mayEdit && (
+                          <ActionForm action={addProjectComment} submit="This one's closest" pending="Sending" buttonClass="btn btn-small btn-line">
+                            <input type="hidden" name="project_id" value={p.id} />
+                            <input type="hidden" name="org_id" value={p.org_id} />
+                            <input type="hidden" name="body" value={`Closest direction: ${c.file_name}`} />
+                          </ActionForm>
+                        )}
+                      </figcaption>
+                    </figure>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {source && (
+            <section className="panel">
+              <h2>Starting point</h2>
+              <p className="muted">{source.title}</p>
+              {urls.get(source.storage_path) && source.mime.startsWith("image/") && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={urls.get(source.storage_path)} alt={source.title} className="source-img" />
+              )}
+            </section>
+          )}
+
           <section className="panel">
             <h2>Conversation</h2>
             {general.length === 0 ? (
@@ -314,7 +433,17 @@ export default async function ProjectPage({
         <aside>
           {staff && (
             <StaffPanel
-              project={{ id: p.id, orgId: p.org_id, status, assignee: p.assignee, plan: org.plan, currency: org.currency }}
+              project={{
+                id: p.id,
+                orgId: p.org_id,
+                status,
+                assignee: p.assignee,
+                plan: org.plan,
+                currency: org.currency,
+                suggested: p.sized_at
+                  ? { hours: p.suggested_hours, due: p.suggested_due, amount: p.suggested_amount, notes: p.suggested_notes ?? "" }
+                  : null,
+              }}
               staff={(staffList.data ?? []) as { id: string; full_name: string; email: string }[]}
             />
           )}
@@ -322,7 +451,13 @@ export default async function ProjectPage({
             <h2>Details</h2>
             <dl className="kv">
               <dt>Type</dt>
-              <dd>{isResize ? "Other sizes and formats (free)" : SERVICE_OPTIONS.find((s) => s.value === p.service)?.label ?? "Not set"}</dd>
+              <dd>
+                {isResize
+                  ? "Other sizes and formats (free)"
+                  : isInstant
+                    ? "Instant (AI)"
+                    : SERVICE_OPTIONS.find((s) => s.value === p.service)?.label ?? "Not set"}
+              </dd>
               <dt>Needed by</dt>
               <dd>{p.deadline ? date(p.deadline) : "No date given"}</dd>
               {p.estimate_due && (

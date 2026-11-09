@@ -4,6 +4,8 @@ import { done, fail, type ActionState } from "@/lib/action";
 import { requireStaff } from "@/lib/session";
 import { summariseBudget, type LedgerEntry } from "@/lib/budget";
 import { planById } from "@/lib/plans";
+import { notifyClient } from "@/lib/notify";
+import { date, projectRef } from "@/lib/format";
 
 const str = (v: FormDataEntryValue | null, n = 4000) => String(v ?? "").trim().slice(0, n);
 const num = (v: FormDataEntryValue | null) => {
@@ -35,6 +37,27 @@ export async function sendEstimate(_prev: ActionState, form: FormData): Promise<
     p_notes: str(form.get("notes"), 4000),
   });
   if (error) return fail(error);
+  const { data: p } = await supabase.from("projects").select("org_id, number, title").eq("id", id).single();
+  if (p) {
+    await notifyClient(
+      p.org_id,
+      data === "in_progress"
+        ? {
+            subject: `Started: ${p.title}`,
+            heading: "Your designer has started",
+            lines: [`${projectRef(p.number)} ${p.title}`, `First draft due ${date(due)}.`],
+            path: `/app/projects/${id}`,
+            button: "See the project",
+          }
+        : {
+            subject: `Estimate ready: ${p.title}`,
+            heading: "Your estimate is ready",
+            lines: [`${projectRef(p.number)} ${p.title}`, `Delivery ${date(due)}. The price is fixed once you approve it.`],
+            path: `/app/projects/${id}`,
+            button: "Review and approve",
+          },
+    );
+  }
   refresh(id);
   return done(data === "in_progress" ? "Sent. Work has started (no approval needed)." : "Sent to the client for approval.");
 }
@@ -82,8 +105,18 @@ export async function addDeliverable(input: {
     await supabase.storage.from("files").remove([input.path]);
     return fail(error);
   }
+  const { data: p } = await supabase.from("projects").select("org_id, number, title").eq("id", input.projectId).single();
+  if (p) {
+    await notifyClient(p.org_id, {
+      subject: `Ready to review: ${input.title}`,
+      heading: "A new file is ready to review",
+      lines: [`${projectRef(p.number)} ${p.title}`, `${input.title}${input.note ? `: ${input.note}` : ""}`],
+      path: `/app/projects/${input.projectId}`,
+      button: "Review it",
+    });
+  }
   refresh(input.projectId);
-  return done("Uploaded and sent for review.");
+  return done("Uploaded and sent for review. The client has been emailed.");
 }
 
 export async function setPlan(_prev: ActionState, form: FormData): Promise<ActionState> {

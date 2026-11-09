@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { ActionForm } from "@/components/ActionForm";
-import { requestResize } from "../actions";
+import { ResizeAsk } from "@/components/ResizeAsk";
 import { canEdit, requireMembership } from "@/lib/session";
 import { signedUrls } from "@/lib/data";
 import { date, fileSize, projectRef } from "@/lib/format";
@@ -92,19 +91,7 @@ export default async function Library({ searchParams }: { searchParams: Promise<
                   {mayAsk && (
                     <details className="lib-resize">
                       <summary>Ask for other sizes or formats</summary>
-                      <ActionForm action={requestResize} submit="Send to my designer" pending="Sending" buttonClass="btn btn-small">
-                        <input type="hidden" name="id" value={f.id} />
-                        <label className="field">
-                          <span>Sizes or formats you need</span>
-                          <textarea
-                            name="sizes"
-                            rows={3}
-                            required
-                            maxLength={2000}
-                            placeholder={"Instagram story 1080x1920\nLinkedIn 1200x627\nA4 print PDF"}
-                          />
-                        </label>
-                      </ActionForm>
+                      <ResizeAsk id={f.id} />
                     </details>
                   )}
                 </div>

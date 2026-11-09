@@ -1,6 +1,8 @@
 import { ActionForm } from "@/components/ActionForm";
 import { Uploader } from "@/components/Uploader";
 import { removeAttachment, saveBrandBook } from "../actions";
+import { scanMyWebsite } from "../brief-actions";
+import { BrandCard } from "@/components/BrandCard";
 import { canEdit, requireMembership } from "@/lib/session";
 import { signedUrls } from "@/lib/data";
 import { dateTime, fileSize } from "@/lib/format";
@@ -14,6 +16,8 @@ const FIELDS = [
   { key: "rules", label: "Do and don't", hint: "Logo rules, words to avoid, imagery that's off-limits.", rows: 4 },
 ] as const;
 
+export const maxDuration = 120;
+
 export default async function BrandBook({ searchParams }: { searchParams: Promise<{ welcome?: string }> }) {
   const { supabase, org, role, profile } = await requireMembership();
   const { welcome } = await searchParams;
@@ -22,7 +26,7 @@ export default async function BrandBook({ searchParams }: { searchParams: Promis
     supabase.from("attachments").select("id, file_name, size, storage_path").eq("org_id", org.id).eq("kind", "brand").order("created_at"),
   ]);
   const editable = canEdit(role, profile.is_staff);
-  const urls = await signedUrls(supabase, (assets ?? []).map((a) => a.storage_path));
+  const urls = await signedUrls(supabase, [...(assets ?? []).map((a) => a.storage_path), ...(book?.logo_path ? [book.logo_path] : [])]);
 
   return (
     <>
@@ -38,6 +42,24 @@ export default async function BrandBook({ searchParams }: { searchParams: Promis
         <div className="callout">
           <p>Your workspace is ready. Start by filling in your brand book, then invite your team or send your first brief.</p>
         </div>
+      )}
+      {editable && (
+        <section className="panel scan-panel">
+          <BrandCard
+            name={org.name}
+            logoUrl={book?.logo_path ? urls.get(book.logo_path) : null}
+            palette={(book?.palette as string[] | null) ?? []}
+            fonts={(book?.fonts as string[] | null) ?? []}
+            website={book?.website}
+          />
+          <ActionForm action={scanMyWebsite} submit={book?.scanned_at ? "Read it again" : "Fill it in from my website"} pending="Reading your website">
+            <label className="field">
+              <span>Your website</span>
+              <input type="text" name="website" defaultValue={book?.website ?? ""} placeholder="yourcompany.com" maxLength={300} />
+              <span className="hint">We read it for your logo, colours, fonts, what you do and how you sound. Anything you&apos;ve written below is kept.</span>
+            </label>
+          </ActionForm>
+        </section>
       )}
       <div className="grid-main">
         <section className="panel">

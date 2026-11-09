@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { ActionForm } from "@/components/ActionForm";
 import { ProjectList, type ProjectRow } from "@/components/ProjectList";
-import { startBrief } from "./actions";
+import { BriefChat } from "@/components/BriefChat";
+import { instantStatus } from "@/lib/instant";
 import { requireMembership } from "@/lib/session";
 import { ACTIVE } from "@/lib/status";
 import { planLabel } from "@/lib/plans";
@@ -9,6 +9,8 @@ import { summariseBudget, type LedgerEntry } from "@/lib/budget";
 import { date, money } from "@/lib/format";
 import { people, displayName } from "@/lib/data";
 import { onTimeRecord, ukDate } from "@/lib/ontime";
+
+export const maxDuration = 300;
 
 export default async function WorkspaceHome() {
   const { supabase, org, profile } = await requireMembership();
@@ -38,6 +40,7 @@ export default async function WorkspaceHome() {
   const budget = org.plan === "flex" ? summariseBudget((ledger ?? []) as LedgerEntry[], org.rollover_months, today) : null;
   const firstName = profile.full_name.split(" ")[0];
 
+  const instant = await instantStatus(supabase, org.id);
   const leadId = (leadRow?.lead_id as string | null) ?? null;
   const lastHandover = (handovers ?? [])[0];
   const who = await people(supabase, [leadId]);
@@ -143,18 +146,9 @@ export default async function WorkspaceHome() {
               <p className="small muted">The studio names one designer for your account before your first brief starts. You&apos;ll see them here.</p>
             )}
           </section>
-          <section className="panel composer">
-            <h2>Quick brief</h2>
-            <ActionForm action={startBrief} submit="Draft my brief" pending="Drafting">
-              <input type="hidden" name="intent" value="draft" />
-              <label className="field">
-                <span className="skip">What do you need?</span>
-                <textarea name="request" rows={5} required placeholder="A 10-slide deck for our investor update on 3 December…" />
-              </label>
-            </ActionForm>
-            <p className="small muted" style={{ marginTop: 10 }}>
-              You&apos;ll check and edit the draft before anything is sent.
-            </p>
+          <section className="panel">
+            <h2>New brief</h2>
+            <BriefChat instant={instant.on} instantLeft={instant.left} compact />
           </section>
           {budget && budget.expiringSoon > 0 && (
             <section className="panel">
