@@ -6,7 +6,7 @@ export type Draft = { title: string; service: string; brief: Brief; source: "cla
 
 // Drafts a brief with Claude when a key is set; otherwise lays out the client's own words.
 export async function draftBrief(request: string, brand: string, deadline?: string): Promise<Draft> {
-  const { anthropicKey, anthropicModel } = serverEnv();
+  const { anthropicKey, anthropicModel, anthropicWorkspace } = serverEnv();
   const fallback = (): Draft => {
     const s = structureBrief(request, deadline);
     return { title: s.title, service: "", brief: s.brief, source: "layout" };
@@ -18,8 +18,10 @@ export async function draftBrief(request: string, brand: string, deadline?: stri
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-api-key": anthropicKey,
-        "anthropic-version": "2023-06-01",
+        authorization: `Bearer ${anthropicKey}`,
+        "anthropic-version": "2026-10-21",
+        // Only needed for keys not scoped to a workspace.
+        ...(anthropicWorkspace ? { "anthropic-workspace-id": anthropicWorkspace } : {}),
       },
       body: JSON.stringify({
         model: anthropicModel,

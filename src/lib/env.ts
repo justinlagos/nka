@@ -14,6 +14,7 @@ export function serverEnv() {
     stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
     anthropicKey: process.env.ANTHROPIC_API_KEY ?? "",
     anthropicModel: process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5",
+    anthropicWorkspace: process.env.ANTHROPIC_WORKSPACE_ID ?? "",
     resendKey: process.env.RESEND_API_KEY ?? "",
     fromEmail: process.env.NKA_FROM_EMAIL || "Nka <studio@nka.studio>",
     notifyEmail: process.env.NKA_NOTIFY_EMAIL ?? "",
