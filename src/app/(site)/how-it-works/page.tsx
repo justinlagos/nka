@@ -87,8 +87,8 @@ export default function HowItWorks() {
           </div>
           <ol className="steps">
             <li>
-              <h3>Choose a plan</h3>
-              <p className="muted">Pay by card. Flex and bespoke start with a call.</p>
+              <h3>Book a demo</h3>
+              <p className="muted">Say what you need and add your website. Your workspace opens in your brand.</p>
             </li>
             <li>
               <h3>Fill in your brand book</h3>
@@ -108,11 +108,11 @@ export default function HowItWorks() {
             </li>
           </ol>
           <div className="hero-actions" style={{ marginTop: 48 }}>
-            <Link href="/pricing" className="btn">
-              See plans
-            </Link>
-            <Link href="/demo" className="btn btn-line">
+            <Link href="/demo" className="btn">
               Book a demo
+            </Link>
+            <Link href="/pricing" className="btn btn-line">
+              How pricing works
             </Link>
           </div>
         </div>

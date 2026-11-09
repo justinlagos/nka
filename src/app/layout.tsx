@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/mona-sans/wdth.css";
+import "@fontsource-variable/bricolage-grotesque/standard.css";
 import "./globals.css";
 import { SITE } from "@/content/site";
 import { env } from "@/lib/env";
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
   openGraph: { title: `${SITE.name}: ${SITE.tagline}`, description: SITE.description, type: "website" },
 };
 
-export const viewport: Viewport = { themeColor: "#1a1b3a", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#000000", width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

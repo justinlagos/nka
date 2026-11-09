@@ -9,10 +9,10 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
     signedIn = false;
   }
   return (
-    <>
+    <div className="site">
       <SiteHeader signedIn={signedIn} />
       <main id="main">{children}</main>
       <SiteFooter />
-    </>
+    </div>
   );
 }

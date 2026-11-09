@@ -20,11 +20,11 @@ export function Mark({ className, title }: { className?: string; title?: string 
   );
 }
 
+// Plain name until the living logo (built from the three approved marks) replaces it.
 export function Wordmark({ className }: { className?: string }) {
   return (
     <span className={`wordmark ${className ?? ""}`}>
-      <Mark className="wordmark-mark" />
-      <span className="wordmark-text">nka</span>
+      <span className="wordmark-text">nka.studio</span>
     </span>
   );
 }

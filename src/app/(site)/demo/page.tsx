@@ -13,7 +13,8 @@ const NEXT = [
   { t: "Within a working day", b: "Your designer calls at the time you picked. You get a monthly price in writing. No card until you say yes." },
 ];
 
-export default function Demo() {
+export default async function Demo({ searchParams }: { searchParams: Promise<{ need?: string }> }) {
+  const { need } = await searchParams;
   return (
     <section className="section demo">
       <div className="wrap demo-grid">
@@ -34,7 +35,7 @@ export default function Demo() {
           </ol>
           <ContactLine lead="Rather talk now?" />
         </div>
-        <DemoFlow />
+        <DemoFlow initialNeed={(need ?? "").slice(0, 300)} />
       </div>
     </section>
   );

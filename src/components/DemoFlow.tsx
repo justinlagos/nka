@@ -20,8 +20,8 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Two short steps, then a code by email. We read their website for the brand and write the
 // first brief, so the workspace opens ready to use.
-export function DemoFlow() {
-  const [a, setA] = useState<Answers>(EMPTY);
+export function DemoFlow({ initialNeed = "" }: { initialNeed?: string }) {
+  const [a, setA] = useState<Answers>({ ...EMPTY, first_need: initialNeed });
   const [step, setStep] = useState(0);
   const [sent, start] = useActionState(startDemo, {} as DemoState);
   const [checked, finish] = useActionState(finishDemo, {} as DemoState);

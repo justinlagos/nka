@@ -10,20 +10,17 @@ export default function ServicesPage() {
       <section className="page-head">
         <div className="wrap">
           <h1 className="h1">Services</h1>
-          <p className="lede">Eight kinds of work, one team. Each page lists what you get and which plans include it.</p>
+          <p className="lede">Eight kinds of work, one team. Each page lists what you get.</p>
         </div>
       </section>
       <section className="section" style={{ paddingTop: 24 }}>
         <div className="wrap">
-          <ul className="index">
+          <ul className="rows">
             {SERVICES.map((s) => (
               <li key={s.slug}>
-                <Link href={`/services/${s.slug}`}>
-                  <span className="index-name">{s.name}</span>
-                  <span className="index-line">
-                    {s.line} <span className="small">({s.plans})</span>
-                  </span>
-                  <span className="index-go">Details</span>
+                <Link href={`/services/${s.slug}`} className="row">
+                  <span className="row-name">{s.name}</span>
+                  <span className="row-text">{s.line}</span>
                 </Link>
               </li>
             ))}
