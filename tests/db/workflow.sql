@@ -98,7 +98,7 @@ begin
     perform public.staff_send_estimate(p1, 100, 1, current_date, '');
     failed := failed + 1; log := log || ' | client sent estimate';
   exception when others then
-    if sqlerrm = 'Studio staff only.' then passed := passed + 1;
+    if sqlerrm in ('Studio staff only.', 'Only this client''s designer or the Nka admin can do that.') then passed := passed + 1;
     else failed := failed + 1; log := log || ' | staff check wrong error: ' || sqlerrm; end if;
   end;
   reset role;

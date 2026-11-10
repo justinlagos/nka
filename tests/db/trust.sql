@@ -45,10 +45,11 @@ begin
   if v_int = 0 then passed := passed + 1; else failed := failed + 1; log := log || ' | accepted invite still listed'; end if;
   reset role;
 
-  -- 2. Staff names a lead (no note needed the first time); changing needs a handover note
+  -- 2. Staff names a lead. Since 0012 a new client already has one (least busy designer, else the admin),
+  --    so this is a change and needs a handover note.
   perform set_config('request.jwt.claims', json_build_object('sub', u_staff, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  perform public.staff_set_lead(v_org, u_staff, '');
+  perform public.staff_set_lead(v_org, u_staff, 'Lead One takes over from the automatic choice.');
   perform public.staff_set_plan(v_org, 'starter', 'active', 1, 'gbp', 2);
   reset role;
   select lead_id into v_uuid from public.orgs where id = v_org;

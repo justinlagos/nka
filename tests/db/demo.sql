@@ -24,17 +24,17 @@ begin
   values ('00000000-0000-0000-0000-000000000000', u, 'authenticated', 'authenticated', 'demo@trust.test', '{}'::jsonb, '{}'::jsonb, now(), now()),
          ('00000000-0000-0000-0000-000000000000', u2, 'authenticated', 'authenticated', 'other@trust.test', '{}'::jsonb, '{}'::jsonb, now(), now());
 
-  -- The person who owns the email gets a workspace; a second call returns the same one.
+  -- The person who owns the email gets a workspace; a second call returns the same one (marked not fresh).
   perform set_config('request.jwt.claims', json_build_object('sub', u, 'role', 'authenticated')::text, true);
   set local role authenticated;
   res := public.setup_from_demo();
   res2 := public.setup_from_demo();
-  if res->>'org' is not null and res->>'project' is not null and res = res2 then passed := passed + 1;
+  if res->>'org' is not null and res->>'project' is not null and res - 'fresh' = res2 - 'fresh' then passed := passed + 1;
   else failed := failed + 1; log := log || ' | setup ' || res::text || ' / ' || res2::text; end if;
   select o.name || '/' || o.country || '/' || (o.lead_id is not null)::text into v_text from public.orgs o where o.id = (res->>'org')::uuid;
   if v_text = 'Acme Foods/Nigeria/true' then passed := passed + 1; else failed := failed + 1; log := log || ' | org ' || coalesce(v_text,'null'); end if;
-  select about into v_text from public.brand_books where org_id = (res->>'org')::uuid;
-  if v_text like 'We make snacks.%Website: acmefoods.ng%Team size: 11-50' then passed := passed + 1; else failed := failed + 1; log := log || ' | about ' || coalesce(v_text,'null'); end if;
+  select about || ' @ ' || website into v_text from public.brand_books where org_id = (res->>'org')::uuid;
+  if v_text like 'We make snacks.%Team size: 11-50 @ acmefoods.ng' then passed := passed + 1; else failed := failed + 1; log := log || ' | about ' || coalesce(v_text,'null'); end if;
   select status || '/' || (brief->>'summary') into v_text from public.projects where id = (res->>'project')::uuid;
   if v_text = 'draft/Social ads for our Christmas launch' then passed := passed + 1; else failed := failed + 1; log := log || ' | project ' || coalesce(v_text,'null'); end if;
   select full_name into v_text from public.profiles where id = u;
