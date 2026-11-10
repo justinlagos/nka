@@ -6,7 +6,14 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function proxy(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  let response = NextResponse.next({ request });
+  // Pages read the path from x-nka-path (set here, never from the browser) to send people to the
+  // same thing in their own area, e.g. a designer opening a client project link.
+  const forward = () => {
+    const headers = new Headers(request.headers);
+    headers.set("x-nka-path", request.nextUrl.pathname);
+    return NextResponse.next({ request: { headers } });
+  };
+  let response = forward();
   if (!url || !key) return response;
 
   const supabase = createServerClient(url, key, {
@@ -16,7 +23,7 @@ export async function proxy(request: NextRequest) {
       },
       setAll(toSet, headers) {
         toSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        response = NextResponse.next({ request });
+        response = forward();
         toSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
         Object.entries(headers ?? {}).forEach(([k, v]) => response.headers.set(k, v));
       },
