@@ -4,6 +4,7 @@ import { AudienceTabs } from "@/components/AudienceTabs";
 import { SkyHero } from "@/components/sky/SkyHero";
 import { WorkWall } from "@/components/WorkWall";
 import { ProjectReel } from "@/components/ProjectReel";
+import { RolesFlow } from "@/components/RolesFlow";
 import { ProjectViewHost } from "@/components/ProjectView";
 import { FilmPlayer } from "@/components/FilmPlayer";
 import { PromptHero } from "@/components/PromptHero";
@@ -28,6 +29,61 @@ const CROSS = (
   </svg>
 );
 
+// Small pieces of the real product that answer each problem.
+function Proof({ kind }: { kind: "date" | "designer" | "price" | "instant" }) {
+  if (kind === "date")
+    return (
+      <div className="proof">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="4" y="5" width="16" height="15" rx="3" />
+          <path d="M4 10h16M9 3v4M15 3v4" />
+        </svg>
+        <span>
+          <small>Brief sent Monday</small>
+          <b>First draft Thursday</b>
+        </span>
+        <i>On time</i>
+      </div>
+    );
+  if (kind === "designer")
+    return (
+      <div className="proof">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4" />
+        </svg>
+        <span>
+          <small>Your lead designer</small>
+          <b>The same person, every brief</b>
+        </span>
+      </div>
+    );
+  if (kind === "price")
+    return (
+      <div className="proof proof-row">
+        <span className="proof-tick">Revisions included</span>
+        <span className="proof-tick">Resizes free</span>
+        <span className="proof-tick">Price fixed in writing</span>
+      </div>
+    );
+  return (
+    <div className="proof">
+      <span className="proof-thumbs" aria-hidden="true">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/gallery/stills/boba-key.webp" alt="" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/gallery/stills/runa-key.webp" alt="" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/gallery/stills/halden-palette.webp" alt="" />
+      </span>
+      <span>
+        <small>Instant</small>
+        <b>Three options in about a minute</b>
+      </span>
+    </div>
+  );
+}
+
 export default function Home() {
   return (
     <div className="lp">
@@ -41,23 +97,32 @@ export default function Home() {
               Design shouldn&apos;t be <em>the bottleneck.</em>
             </h2>
             <p>
-              Most teams know the feeling: the launch is ready, the design isn&apos;t. Here is what usually slows it down, and what
-              changes with Nka.
+              The launch is ready, the design isn&apos;t. These are the four things we hear most, and what happens instead when
+              the brief comes to Nka.
             </p>
           </div>
-          <ol className="pains-list">
+          <ul className="pains2">
             {PAINS.map((p) => (
-              <li key={p.pain}>
-                <span className="pain">{p.pain}</span>
-                <span className="arrow" aria-hidden="true">
-                  <svg viewBox="0 0 40 16">
-                    <path d="M0 8h36M30 2l6 6-6 6" />
-                  </svg>
-                </span>
-                <span className="fix">{p.fix}</span>
+              <li key={p.who} className={`tint-${p.tint}`}>
+                <div className="pain-ask">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={p.img} alt="" width={48} height={48} loading="lazy" />
+                  <p>
+                    {p.ask}
+                    <small>{p.who}</small>
+                  </p>
+                </div>
+                <p className="pain-usual">
+                  <span>Usually</span>
+                  <s>{p.usual}</s>
+                </p>
+                <div className="pain-fix">
+                  <b>{p.fix}</b>
+                  <Proof kind={p.proof} />
+                </div>
               </li>
             ))}
-          </ol>
+          </ul>
         </div>
       </section>
 
@@ -70,6 +135,23 @@ export default function Home() {
               <span>{s.label}</span>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Who asks, and what comes back */}
+      <section className="lp-section lp-pt0">
+        <div className="lp-wrap">
+          <div className="lp-head">
+            <h2>
+              Whoever&apos;s asking, <em>it comes back finished.</em>
+            </h2>
+            <p>
+              Marketing needs ads by Friday. The founder needs a deck. Events needs badges. Everyone sends it to one place, and
+              every request gets a designer and a date.
+            </p>
+          </div>
+          <RolesFlow />
+          <p className="lp-note">People shown are illustrations. Work shown is studio concepts for invented brands.</p>
         </div>
       </section>
 

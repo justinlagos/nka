@@ -11,7 +11,6 @@ export const SHOW = {
   coffee: tall("coffee", "Coffee bags, stacked cups, a stamp and loyalty cards on a café counter"),
   skincare: tall("skincare", "Skincare bottle, jar and carton on a stone ledge"),
   runa: wide("runa", "A running-brand poster campaign pasted on an east London wall, a runner passing"),
-  social: wide("social", "Over the shoulder of a woman in a café looking at a bubble tea post on her phone"),
   website: wide("website", "Over the shoulder of a man using a delivery company's website on his laptop"),
   identity: wide("identity", "An architecture practice's stationery: letterpress cards, letterhead, notebook and stamp"),
   stage: wide("stage", "A conference stage with the event identity on screen, the audience taking photos"),
@@ -24,7 +23,7 @@ export const SHOW = {
   billboard: wide("billboard", "A savings-app billboard over a busy Lagos road at sunset"),
   merch: tall("merch", "A shopper at a streetwear pop-up wearing the label's t-shirt and tote"),
   signage: wide("signage", "Wayfinding signs and a large painted floor number in an office lobby"),
-  motion: wide("motion", "A motion ad playing on a tall screen in a London railway station"),
+  motion: wide("runa-station", "A motion ad playing on a tall screen in a London railway station"),
   badges: tall("badges", "Conference badges, lanyards, programme and tote on a registration table"),
   // Colour studio shots
   vela: { src: "/gallery/vela.webp", w: 1200, h: 1500, alt: "Three phones showing screens from a health app, on mint" },
@@ -42,12 +41,76 @@ export const STATS = [
   { figure: "0", label: "Hiring, notice periods or exit fees" },
 ];
 
-// The problem, in the words people use, and what changes.
-export const PAINS: { pain: string; fix: string }[] = [
-  { pain: "Hiring takes months, and one designer can't do everything.", fix: "Start this week with a senior team that covers every discipline." },
-  { pain: "Freelancers disappear, and quality changes from job to job.", fix: "One named designer leads your account, learns your brand and stays." },
-  { pain: "Agencies quote for weeks and bill for every change.", fix: "One monthly price. Revisions included. Resizes free." },
-  { pain: "AI tools give you a start, not a finished file.", fix: "Instant options in a minute, finished by a designer when it matters." },
+// The problem, in the words people use, and what changes. Each one shows the proof inside the product.
+export const PAINS: {
+  who: string;
+  img: string;
+  ask: string;
+  usual: string;
+  fix: string;
+  proof: "date" | "designer" | "price" | "instant";
+  tint: string;
+}[] = [
+  {
+    who: "Marketing lead",
+    img: "/gallery/people/marketing.webp",
+    ask: "We need the launch ads in six sizes by Friday.",
+    usual: "Wait for a freelancer to reply.",
+    fix: "A delivery date the moment you send the brief.",
+    proof: "date",
+    tint: "peach",
+  },
+  {
+    who: "Agency producer",
+    img: "/gallery/people/agency.webp",
+    ask: "Our last freelancer went quiet halfway through.",
+    usual: "Brief someone new from scratch.",
+    fix: "One named designer leads your account and stays.",
+    proof: "designer",
+    tint: "sky",
+  },
+  {
+    who: "Founder",
+    img: "/gallery/people/founder.webp",
+    ask: "The agency quoted three weeks and charged for every change.",
+    usual: "Pay again for each round.",
+    fix: "One monthly price. Revisions included. Resizes free.",
+    proof: "price",
+    tint: "mint",
+  },
+  {
+    who: "Social media manager",
+    img: "/gallery/people/social.webp",
+    ask: "AI gave us a start, not something we could post.",
+    usual: "Fix it yourself at midnight.",
+    fix: "Three options in about a minute, finished by a designer when it matters.",
+    proof: "instant",
+    tint: "lilac",
+  },
+];
+
+// Who sends briefs, and the finished work that comes back. Ids are projects in projects.ts.
+export const ROLES: { id: string; role: string; asks: string; need: string; img: string; get: string[] }[] = [
+  { id: "marketing", role: "Marketing lead", asks: "Ads for every channel by Friday", need: "Launch ads for every channel, in all sizes", img: "/gallery/people/marketing.webp", get: ["boba", "runa"] },
+  { id: "founder", role: "Founder", asks: "A deck and a site before the raise", need: "A pitch deck and a website for our raise", img: "/gallery/people/founder.webp", get: ["fernline", "haulo", "halden"] },
+  { id: "agency", role: "Agency producer", asks: "Overflow work, under our name", need: "Overflow design work for our clients, white label", img: "/gallery/people/agency.webp", get: ["runa", "halden", "boba"] },
+  { id: "events", role: "Events lead", asks: "Branding for the whole event", need: "Branding for our event: stage, badges and programme", img: "/gallery/people/events.webp", get: ["northlight"] },
+  { id: "social", role: "Social media manager", asks: "Posts that move, in every size", need: "Animated social posts in every size", img: "/gallery/people/social.webp", get: ["boba", "runa"] },
+  { id: "nonprofit", role: "Programme director", asks: "A report funders actually read", need: "Our annual report, for print and screen", img: "/gallery/people/nonprofit.webp", get: ["bright", "northlight"] },
+  { id: "brand", role: "Brand manager", asks: "Packaging for the new range", need: "Packaging for our new product range", img: "/gallery/people/brand.webp", get: ["koko", "halden"] },
+  { id: "owner", role: "Restaurant owner", asks: "A brand for opening night", need: "A brand for our restaurant: sign, menus and print", img: "/gallery/people/owner.webp", get: ["ewa", "koko"] },
+];
+
+export const OUTCOMES: { id: string; brand: string; title: string; img: string }[] = [
+  { id: "boba", brand: "Boba Bay", title: "Launch posts in every size", img: "/gallery/stills/boba-key.webp" },
+  { id: "runa", brand: "Runa", title: "A city campaign", img: "/gallery/stills/runa-billboard.webp" },
+  { id: "fernline", brand: "Fernline", title: "A Series A deck", img: "/gallery/pitch.webp" },
+  { id: "haulo", brand: "Haulo", title: "Website and app", img: "/gallery/stills/haulo-laptop.webp" },
+  { id: "halden", brand: "Halden & Co", title: "A full identity", img: "/gallery/identity.webp" },
+  { id: "northlight", brand: "Northlight Summit", title: "Stage, badges, programme", img: "/gallery/stage.webp" },
+  { id: "bright", brand: "Bright Futures Fund", title: "An annual report", img: "/gallery/impact.webp" },
+  { id: "koko", brand: "Koko Bloc", title: "Packaging for a range", img: "/gallery/choco.webp" },
+  { id: "ewa", brand: "Ewa", title: "A restaurant brand", img: "/gallery/ewa-front.webp" },
 ];
 
 // Who does the work. The photos are illustrations, said so on the page.
@@ -55,26 +118,26 @@ export const PEOPLE: { title: string; body: string; src: string; w: number; h: n
   {
     title: "A named lead designer",
     body: "The same senior designer leads your account and learns your brand. No new freelancer every month.",
-    src: "/gallery/studio-proofs.webp",
+    src: "/gallery/studio-present.webp",
     w: 1800,
     h: 1200,
-    alt: "A creative director smiling at a long table of printed proofs",
+    alt: "A designer presenting a colourful brand identity to a mixed team in a bright meeting room",
   },
   {
     title: "Every discipline on one plan",
     body: "Brand, print, digital, motion and presentations. Specialists join a brief when it needs them.",
-    src: "/gallery/studio-motion.webp",
+    src: "/gallery/studio-desk.webp",
     w: 1800,
     h: 1200,
-    alt: "A motion designer at work on an animation timeline",
+    alt: "A motion designer smiling at his desk, an animation open on his screen",
   },
   {
     title: "Reviewed in one place",
     body: "Comment on the file, approve in a click, and every approved size lands in your library.",
-    src: "/gallery/studio-wall.webp",
+    src: "/gallery/studio-team.webp",
     w: 1800,
     h: 1200,
-    alt: "A team reviewing slides pinned to the wall",
+    alt: "A mixed team laughing around a table of laptops, prints and sticky notes",
   },
 ];
 

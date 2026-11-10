@@ -7,13 +7,13 @@
 body{width:1600px;height:900px;overflow:hidden;background:#111;font-family:"Archivo Variable",sans-serif}
 .layer{position:absolute;inset:0;overflow:hidden}
 .kv{position:absolute;left:0;top:0;width:1600px;height:800px;background:#121212;overflow:hidden;color:#ff5b1f}
-.kv .w{position:absolute;left:80px;font-weight:900;font-size:250px;line-height:.8;letter-spacing:-.01em;white-space:nowrap}
+.kv .w{position:absolute;left:80px;font-weight:800;font-size:250px;line-height:.8;letter-spacing:-.035em;white-space:nowrap}
 .kv .w1{top:70px}.kv .w2{top:290px}.kv .w3{top:510px}
 .kv svg{position:absolute;right:70px;top:90px;width:520px;height:620px}
 .kv .stat{position:absolute;right:90px;color:#f4f1ea;font-family:"Inter Tight Variable";font-weight:600;font-size:30px;text-align:right}
 .kv .stat small{display:block;font-size:17px;color:#9b9b9b;font-weight:500}
 .kv .s1{top:110px}.kv .s2{top:210px}
-.kv .mark{position:absolute;right:86px;bottom:60px;color:#f4f1ea;font-weight:800;font-size:46px;letter-spacing:.2em;font-variation-settings:"wdth" 125}
+.kv .mark{position:absolute;right:86px;bottom:56px;color:#ff5b1f;font-weight:800;font-size:54px;letter-spacing:.01em;font-variation-settings:"wdth" 100}
 .photo{position:absolute;left:0;top:0;transform-origin:0 0}
 .photo img.hole{position:absolute;left:0;top:0;display:block}
 .photo .kv{transform-origin:0 0}
@@ -21,22 +21,28 @@ body{width:1600px;height:900px;overflow:hidden;background:#111;font-family:"Arch
 .cap{position:absolute;left:56px;bottom:46px;color:#fff;font-family:"Inter Tight Variable";font-weight:600;font-size:22px;padding:10px 18px;border-radius:999px;background:rgba(0,0,0,.45);backdrop-filter:blur(6px)}
 .phones{position:absolute;inset:0;background:#ece8df;display:flex;gap:46px;align-items:center;justify-content:center}
 .ph{border-radius:38px;background:#121212;overflow:hidden;position:relative;box-shadow:0 30px 60px rgba(0,0,0,.25);border:10px solid #1b1b1b}
-.ph .t{position:absolute;left:28px;font-weight:900;color:#ff5b1f;line-height:.82}
-.ph .m{position:absolute;right:22px;bottom:22px;color:#f4f1ea;font-weight:800;letter-spacing:.2em;font-size:18px;font-variation-settings:"wdth" 125}
+.ph .t{position:absolute;left:28px;font-weight:800;color:#ff5b1f;line-height:.86;letter-spacing:-.035em}
+.ph .m{position:absolute;right:22px;bottom:20px;color:#ff5b1f;font-weight:800;letter-spacing:.01em;font-size:24px}
 .endc{position:absolute;left:0;right:0;bottom:60px;text-align:center;font-family:"Inter Tight Variable";color:#111;font-size:22px;font-weight:600}
-.endc b{font-family:"Archivo Variable";font-weight:900;font-size:40px;letter-spacing:.14em;font-variation-settings:"wdth" 125;display:block;margin-bottom:6px}
+.endc b{font-family:"Archivo Variable";font-weight:800;font-size:56px;letter-spacing:.01em;color:#ff5b1f;display:block;margin-bottom:6px}
 </style></head><body>
-<template id="kvT"><div class="kv"><div class="w w1">RUN</div><div class="w w2">YOUR</div><div class="w w3">CITY.</div>
+<template id="kvT"><div class="kv"><div class="w w1">Run</div><div class="w w2">your</div><div class="w w3">city.</div>
 <svg viewBox="0 0 520 620"><path class="route" d="M40 560 C 90 470, 60 400, 140 360 S 260 330, 250 250 S 180 150, 260 110 S 420 120, 440 60" fill="none" stroke="#ff5b1f" stroke-width="10" stroke-linecap="round"/><circle class="dot" r="16" fill="#f4f1ea"/></svg>
 <div class="stat s1"><span class="pace">5:12</span> /km<small>Pace</small></div><div class="stat s2"><span class="dist">0.0</span> km<small>Distance</small></div><div class="mark">RUNA</div></div></template>
+<template id="kvP"><div class="kvp" style="position:absolute;left:0;top:0;width:600px;height:1232px;background:#101012;overflow:hidden;color:#ff5b1f;font-family:'Archivo Variable'">
+<div class="w w1" style="position:absolute;left:46px;top:150px;font-weight:800;font-size:210px;line-height:.8;letter-spacing:-.035em">Run</div>
+<div class="w w2" style="position:absolute;left:46px;top:340px;font-weight:800;font-size:210px;line-height:.8;letter-spacing:-.035em">your</div>
+<div class="w w3" style="position:absolute;left:46px;top:530px;font-weight:800;font-size:210px;line-height:.8;letter-spacing:-.035em">city.</div>
+<svg viewBox="0 0 520 620" style="position:absolute;left:150px;top:720px;width:300px;height:340px"><path class="route" d="M40 560 C 90 470, 60 400, 140 360 S 260 330, 250 250 S 180 150, 260 110 S 420 120, 440 60" fill="none" stroke="#ff5b1f" stroke-width="14" stroke-linecap="round"/><circle class="dot" r="22" fill="#f4f1ea"/></svg>
+<div class="mark" style="position:absolute;left:0;right:0;bottom:70px;text-align:center;font-weight:800;font-size:64px;letter-spacing:.01em">RUNA</div></div></template>
 <div class="layer" id="L1"></div>
 <div class="layer" id="L2"><div class="photo" id="bb"><img class="hole" src="billboard-hole.webp" width="2816" height="1584"></div><span class="cap">Digital billboard, London</span></div>
-<div class="layer" id="L3"><div class="still" id="st3" style="background-image:url(../../public/gallery/motion.webp)"></div><span class="cap">Station screens</span></div>
+<div class="layer" id="L3"><div class="photo" id="stn"><img class="hole" src="station-hole.webp" width="1800" height="1208"></div><span class="cap">Station screens</span></div>
 <div class="layer" id="L4"><div class="still" id="st4" style="background-image:url(../../public/gallery/runa.webp)"></div><span class="cap">Street posters</span></div>
 <div class="layer" id="L5"><div class="phones">
-  <div class="ph" id="p1" style="width:300px;height:620px"><div class="t" style="top:56px;font-size:70px">RUN<br>YOUR<br>CITY.</div><div class="m">RUNA</div></div>
-  <div class="ph" id="p2" style="width:400px;height:400px;border-radius:24px"><div class="t" style="top:40px;font-size:66px">10 KM<br>BEFORE<br>WORK.</div><div class="m">RUNA</div></div>
-  <div class="ph" id="p3" style="width:340px;height:425px;border-radius:24px"><div class="t" style="top:40px;font-size:60px">THE CITY<br>IS YOUR<br>TRACK.</div><div class="m">RUNA</div></div>
+  <div class="ph" id="p1" style="width:300px;height:620px"><div class="t" style="top:56px;font-size:74px">Run<br>your<br>city.</div><div class="m">RUNA</div></div>
+  <div class="ph" id="p2" style="width:400px;height:400px;border-radius:24px"><div class="t" style="top:40px;font-size:70px">10 km<br>before<br>work.</div><div class="m">RUNA</div></div>
+  <div class="ph" id="p3" style="width:340px;height:425px;border-radius:24px"><div class="t" style="top:40px;font-size:62px">The city<br>is your<br>track.</div><div class="m">RUNA</div></div>
 </div><div class="endc"><b>RUNA</b>City campaign · Studio concept by nka.studio</div></div>
 <script>
 const T=document.getElementById('kvT');
@@ -44,11 +50,16 @@ const full=T.content.firstElementChild.cloneNode(true); full.style.top='50px'; d
 const bbKv=T.content.firstElementChild.cloneNode(true); const bb=document.getElementById('bb'); bb.insertBefore(bbKv,bb.firstChild);
 bbKv.style.transform=quadMatrix(1600,800,[[777,234],[1852,535],[1862,995],[764,893]]);
 const L1=document.getElementById('L1'); L1.style.background='#121212';
+const stn=document.getElementById('stn'); const kvp=document.getElementById('kvP').content.firstElementChild.cloneNode(true); stn.insertBefore(kvp,stn.firstChild);
+kvp.style.transformOrigin='0 0'; kvp.style.transform=quadMatrix(600,1232,[[765,162],[1065,160],[1063,778],[766,778]]); kvp.style.filter='brightness(1.08)';
+function kvP(el,t){el.querySelectorAll('.w').forEach((w,i)=>{const a=0.1+i*0.25;const p=K.outQuint(K.seg(t,a,a+0.7));w.style.fontVariationSettings='"wdth" '+(62+38*p);w.style.opacity=K.seg(t,a,a+0.12);});
+  const r=el.querySelector('.route');const L=r.getTotalLength();const d=K.inOutCubic(K.seg(t,0.5,2.2));r.style.strokeDasharray=L;r.style.strokeDashoffset=L*(1-d);const pt=r.getPointAtLength(L*d);const dot=el.querySelector('.dot');dot.setAttribute('cx',pt.x);dot.setAttribute('cy',pt.y);
+  el.querySelector('.mark').style.opacity=K.seg(t,.9,1.2);}
 const path=[...document.querySelectorAll('.route')]; const len=path[0].getTotalLength();
 function kv(el,t){
   const ws=el.querySelectorAll('.w');
   ws.forEach((w,i)=>{const a=0.15+i*0.32;const p=K.outQuint(K.seg(t,a,a+0.7));
-    w.style.fontVariationSettings='"wdth" '+(62+50*p);w.style.transform='translateX('+(-120*(1-p))+'px)';w.style.opacity=K.seg(t,a,a+0.12);});
+    w.style.fontVariationSettings='"wdth" '+(62+38*p);w.style.transform='translateX('+(-120*(1-p))+'px)';w.style.opacity=K.seg(t,a,a+0.12);});
   const r=el.querySelector('.route');const d=K.inOutCubic(K.seg(t,0.6,3.2));
   r.style.strokeDasharray=len;r.style.strokeDashoffset=len*(1-d);
   const pt=r.getPointAtLength(len*d);const dot=el.querySelector('.dot');dot.setAttribute('cx',pt.x);dot.setAttribute('cy',pt.y);dot.style.opacity=d>0?1:0;
@@ -65,13 +76,13 @@ window.frame=function(t){
   bb.style.transform='translate('+(-1600*0.04*z - 90*K.seg(t,3.2,6.8))+'px,'+(-900*0.08)+'px) scale('+sc+')';
   kv(bbKv,t-3.0);
   // 3: station 6.6-9.2
-  K.show('#L3',t,6.6,9.2,.35);K.css('#st3',{transform:'scale('+(1.02+0.06*K.seg(t,6.6,9.2))+')'});
+  K.show('#L3',t,6.6,9.2,.35);{const z=1+0.06*K.seg(t,6.6,9.2),sc=1600/1800*1.02*z;stn.style.transform='translate('+(800-915*sc)+'px,'+(450-560*sc)+'px) scale('+sc+')';} kvP(kvp,t-6.7);
   // 4: posters 9.0-11.6
   K.show('#L4',t,9.0,11.6,.35);K.css('#st4',{transform:'scale('+(1.08-0.06*K.seg(t,9,11.6))+') translateX('+(20*K.seg(t,9,11.6))+'px)'});
   // 5: social formats 11.4-14
   K.show('#L5',t,11.4,14.4,.35);
   ['#p1','#p2','#p3'].forEach((id,i)=>{const p=K.outBack(K.seg(t,11.5+i*.15,12.1+i*.15));K.css(id,{transform:'translateY('+(60*(1-p))+'px)',opacity:K.seg(t,11.5+i*.15,11.7+i*.15)});
-    document.querySelectorAll(id+' .t').forEach(x=>x.style.fontVariationSettings='"wdth" '+(62+40*K.outQuint(K.seg(t,11.8+i*.2,12.6+i*.2))));});
+    document.querySelectorAll(id+' .t').forEach(x=>x.style.fontVariationSettings='"wdth" '+(62+38*K.outQuint(K.seg(t,11.8+i*.2,12.6+i*.2))));});
 };
 frame(0);
 </script></body></html>

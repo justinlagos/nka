@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { STEPS } from "@/content/site";
+import { FilmPlayer } from "@/components/FilmPlayer";
 
 export const metadata: Metadata = {
   title: "How it works",
@@ -42,81 +43,96 @@ const WORKSPACE = [
   },
 ];
 
+const START = [
+  { title: "Start a project", body: "Say what you need and add your website. Your workspace opens in your brand." },
+  { title: "Check your brand book", body: "Ten minutes. Upload your logo and guidelines if you have them." },
+  { title: "Invite your team", body: "Send invite links from the Team page." },
+  { title: "Send a brief", body: "Tick kickoff call if you'd like to talk it through first." },
+  { title: "Review the first draft", body: "Usually within 2 working days on a plan." },
+];
+
 export default function HowItWorks() {
   return (
-    <>
-      <section className="page-head">
-        <div className="wrap">
-          <h1 className="h1">How it works</h1>
-          <p className="lede">The same five steps for every request, and one workspace where you can see all of them.</p>
+    <div className="lp">
+      <section className="lp-section hiw-top">
+        <div className="lp-wrap">
+          <div className="lp-head">
+            <h1 className="hiw-h1">
+              From one sentence <em>to finished files.</em>
+            </h1>
+            <p>The same five steps for every request, in one workspace your whole team can see.</p>
+          </div>
+          <figure className="lp-film hiw-film">
+            <FilmPlayer
+              src="/films/film-workflow.mp4"
+              poster="/films/film-workflow.jpg"
+              label="Film: a brief for social ads going from a sentence to six finished sizes in the Nka workspace"
+            />
+            <figcaption>Product demonstration: a brief for social ads, from one sentence to six finished sizes.</figcaption>
+          </figure>
         </div>
       </section>
-      <section className="section" style={{ paddingTop: 24 }}>
-        <div className="wrap">
-          <ol className="steps">
-            {STEPS.map((s) => (
+
+      <section className="lp-section lp-pt0">
+        <div className="lp-wrap">
+          <ol className="steps3 steps5">
+            {STEPS.map((s, i) => (
               <li key={s.title}>
-                <h3>{s.title}</h3>
-                <p className="muted">{s.body}</p>
+                <span className="steps3-n">{i + 1}</span>
+                <b>{s.title}</b>
+                <p>{s.body}</p>
               </li>
             ))}
           </ol>
         </div>
       </section>
-      <section className="section">
-        <div className="wrap">
-          <div className="section-head">
-            <h2 className="h1">The workspace</h2>
-            <p className="muted">Included with every plan. No seats to count: invite your whole team.</p>
+
+      <section className="lp-section lp-mist">
+        <div className="lp-wrap">
+          <div className="lp-head">
+            <h2>
+              The workspace, <em>on every plan.</em>
+            </h2>
+            <p>No seats to count. Invite your whole team, and give finance a view without edit rights.</p>
           </div>
-          <div className="split">
+          <ul className="ws-grid">
             {WORKSPACE.map((w) => (
-              <div className="block" key={w.title}>
-                <h3 className="h3">{w.title}</h3>
-                <p className="muted">{w.body}</p>
-              </div>
+              <li key={w.title}>
+                <b>{w.title}</b>
+                <p>{w.body}</p>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </section>
-      <section className="section">
-        <div className="wrap">
-          <div className="section-head">
-            <h2 className="h1">Getting started</h2>
-            <p className="muted">Most teams send their first brief on day one.</p>
+
+      <section className="lp-section lp-night">
+        <div className="lp-wrap">
+          <div className="lp-head">
+            <h2>
+              Your first brief, <em>on day one.</em>
+            </h2>
+            <p>Most teams send their first brief on day one.</p>
           </div>
-          <ol className="steps">
-            <li>
-              <h3>Book a demo</h3>
-              <p className="muted">Say what you need and add your website. Your workspace opens in your brand.</p>
-            </li>
-            <li>
-              <h3>Fill in your brand book</h3>
-              <p className="muted">Ten minutes. Upload your logo and guidelines if you have them.</p>
-            </li>
-            <li>
-              <h3>Invite your team</h3>
-              <p className="muted">Send invite links from the Team page.</p>
-            </li>
-            <li>
-              <h3>Send a brief</h3>
-              <p className="muted">Tick "kickoff call" if you'd like to talk it through first.</p>
-            </li>
-            <li>
-              <h3>Review the first draft</h3>
-              <p className="muted">Usually within 2 working days on a plan.</p>
-            </li>
+          <ol className="steps3 steps5">
+            {START.map((x, i) => (
+              <li key={x.title}>
+                <span className="steps3-n">{i + 1}</span>
+                <b>{x.title}</b>
+                <p>{x.body}</p>
+              </li>
+            ))}
           </ol>
-          <div className="hero-actions" style={{ marginTop: 48 }}>
-            <Link href="/demo" className="btn">
-              Book a demo
+          <div className="lp-actions">
+            <Link href="/demo" className="lp-btn lp-btn-lg">
+              Start a project
             </Link>
-            <Link href="/pricing" className="btn btn-line">
+            <Link href="/pricing" className="lp-btn lp-btn-lg lp-btn-line">
               How pricing works
             </Link>
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }

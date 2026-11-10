@@ -10,9 +10,9 @@ matrix3d, under the photo, so hands and bezels stay in front.
 | File | Film | Length |
 | --- | --- | --- |
 | f1.html | Halden & Co, brand identity in motion | 14.4s |
-| f2.html | Runa, campaign in the real world | 14.2s |
+| f2.html | Runa, campaign in the real world: key visual, billboard, station screen, posters, social | 14.2s |
 | f3.html | Northlight Summit, creative presentation | 13.2s |
-| f4.html | Boba Bay, motion and social | 11.8s |
+| f4.html | Boba Bay, motion and social: photographic cups and fruit, stories, feed sizes, shop screen | 15.6s |
 | f5.html | Haulo, website and app | 13s |
 | f6.html | The Nka workspace, brief to finished files (product demonstration) | 17s, encoded from 0.5s |
 
@@ -25,4 +25,18 @@ node stills.js $PWD/f5.html check.jpg 2,5,9     # contact sheet for checking
 node clean.js still.png $PWD/f5.html 11.4        # one frame without captions
 ```
 
-Fonts: @fontsource-variable archivo, fraunces, inter-tight, manrope, plus-jakarta-sans; @fontsource caprasimo.
+Fonts: @fontsource-variable archivo, fraunces, inter-tight, manrope, plus-jakarta-sans, fredoka; @fontsource caprasimo, gloock, kalam.
+
+Boba Bay: the cups, fruit, pearls, clouds and logo in `boba/` are transparent cutouts from gpt_image_2_6 images
+(background transparent). Every story, feed size and the shop screen is laid out from these, in Fredoka with
+Kalam for the script line, so the film and the stills match the key visual. `boba/phone-hole.webp` and
+`boba/shop-hole.webp` are the real-world shots with the screen cut out.
+
+Runa: one wordmark (RUNA, Archivo 800, orange) and one headline (Run your city., sentence case) on every piece.
+`station-still.html` renders the station photo with the poster in place; `small.html` is the small screen
+repainted into that photo.
+
+Motion reel (`public/films/reel-motion.mp4`, 23.5s): cuts from the films above with `reelend.html` as the end card.
+It is the hero on the Motion and video service page.
+
+`shot.js` takes a plain screenshot of a page: `node shot.js $PWD/page.html out.png 1600 900`.
