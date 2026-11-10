@@ -47,7 +47,7 @@ export function SignInForm({ next, as = "client" }: { next: string; as?: "client
           </p>
         </div>
         <p className="small muted" style={{ marginTop: 16 }}>
-          Nothing arrived after a minute? Check spam, or go back and send a new code.
+          It comes from Nka Studio. In Gmail it often lands in the Promotions tab, so look there and in spam before sending a new code.
         </p>
       </form>
     );

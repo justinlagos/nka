@@ -56,6 +56,7 @@ export function DemoFlow({ initialNeed = "" }: { initialNeed?: string }) {
             autoFocus
             className="code-input"
           />
+          <span className="hint">From Nka Studio. In Gmail it often lands in the Promotions tab.</span>
         </label>
         <div className="form-foot">
           <SubmitButton label="Open my workspace" pending="Reading your site and writing your brief" />
