@@ -83,7 +83,9 @@ export default async function YourWork() {
       {rows.length === 0 && (
         <div className="callout">
           <p>
-            Nothing assigned to you yet. When Nka gives you a client, their briefs land here and you get an email.{" "}
+            {(done ?? []).length
+              ? "Nothing open right now. New briefs from your clients land here, and you get an email."
+              : "Nothing assigned to you yet. When Nka gives you a client, their briefs land here and you get an email."}{" "}
             <Link href="/studio/clients">Your clients</Link>
           </p>
         </div>

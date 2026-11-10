@@ -5,7 +5,7 @@ import { sendSignInCode, verifySignInCode, type SignInState } from "@/app/signin
 
 // Two steps on one page: email, then the code from the email. The code works on any
 // device, so opening the email on a phone and signing in on a laptop is fine.
-export function SignInForm({ next }: { next: string }) {
+export function SignInForm({ next, as = "client" }: { next: string; as?: "client" | "designer" }) {
   const [sent, send] = useActionState(sendSignInCode, {} as SignInState);
   const [checked, verify] = useActionState(verifySignInCode, {} as SignInState);
   const [step, setStep] = useState<"email" | "code">("email");
@@ -56,8 +56,9 @@ export function SignInForm({ next }: { next: string }) {
   return (
     <form action={send}>
       <input type="hidden" name="next" value={next} />
+      <input type="hidden" name="as" value={as} />
       <label className="field">
-        <span>Work email</span>
+        <span>{as === "designer" ? "The email Nka added you with" : "Work email"}</span>
         <input type="email" name="email" required autoComplete="email" autoFocus defaultValue={sent.email ?? ""} />
       </label>
       <label className="field">

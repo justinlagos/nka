@@ -37,64 +37,66 @@ export default async function Team() {
         <div>
           <section className="panel">
             <h2>People in {org.name}</h2>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Role</th>
-                  <th>Joined</th>
-                  {admin && <th></th>}
-                </tr>
-              </thead>
-              <tbody>
-                {(members ?? []).map((m) => {
-                  const p = who.get(m.user_id);
-                  const editable = admin && m.role !== "owner" && m.user_id !== userId;
-                  return (
-                    <tr key={m.user_id}>
-                      <td>
-                        {displayName(p)}
-                        <br />
-                        <span className="small muted">{p?.email}</span>
-                      </td>
-                      <td>
-                        {editable ? (
-                          <form action={changeRole} className="inline-actions">
-                            <input type="hidden" name="user" value={m.user_id} />
-                            <label className="skip" htmlFor={`r-${m.user_id}`}>
-                              Role
-                            </label>
-                            <select id={`r-${m.user_id}`} name="role" defaultValue={m.role} style={{ width: "auto" }}>
-                              <option value="admin">Admin</option>
-                              <option value="member">Member</option>
-                              <option value="viewer">Viewer</option>
-                            </select>
-                            <button className="btn btn-small btn-line" type="submit">
-                              Save
-                            </button>
-                          </form>
-                        ) : (
-                          ROLE_TEXT[m.role]?.split(":")[0]
-                        )}
-                      </td>
-                      <td>{date(m.created_at)}</td>
-                      {admin && (
+            <div className="table-scroll">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Joined</th>
+                    {admin && <th></th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(members ?? []).map((m) => {
+                    const p = who.get(m.user_id);
+                    const editable = admin && m.role !== "owner" && m.user_id !== userId;
+                    return (
+                      <tr key={m.user_id}>
                         <td>
-                          {editable && (
-                            <form action={removeMember}>
+                          {displayName(p)}
+                          <br />
+                          <span className="small muted">{p?.email}</span>
+                        </td>
+                        <td>
+                          {editable ? (
+                            <form action={changeRole} className="inline-actions">
                               <input type="hidden" name="user" value={m.user_id} />
-                              <button className="btn btn-small btn-danger" type="submit">
-                                Remove
+                              <label className="skip" htmlFor={`r-${m.user_id}`}>
+                                Role
+                              </label>
+                              <select id={`r-${m.user_id}`} name="role" defaultValue={m.role} style={{ width: "auto" }}>
+                                <option value="admin">Admin</option>
+                                <option value="member">Member</option>
+                                <option value="viewer">Viewer</option>
+                              </select>
+                              <button className="btn btn-small btn-line" type="submit">
+                                Save
                               </button>
                             </form>
+                          ) : (
+                            ROLE_TEXT[m.role]?.split(":")[0]
                           )}
                         </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        <td>{date(m.created_at)}</td>
+                        {admin && (
+                          <td>
+                            {editable && (
+                              <form action={removeMember}>
+                                <input type="hidden" name="user" value={m.user_id} />
+                                <button className="btn btn-small btn-danger" type="submit">
+                                  Remove
+                                </button>
+                              </form>
+                            )}
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </section>
 
           {admin && (invites ?? []).length > 0 && (

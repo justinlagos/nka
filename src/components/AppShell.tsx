@@ -51,7 +51,7 @@ export function AppShell({
   const name = profile.full_name || profile.email.split("@")[0];
   return (
     <div className={`app area-${area}`}>
-      <AccountGuard userId={profile.id} />
+      <AccountGuard userId={profile.id} signin={area === "designer" ? "/designer" : "/signin"} />
       <aside className="app-side">
         <Link href={HOME[area]} aria-label={`${BADGE[area]} home`} style={{ color: "inherit", padding: "0 12px" }}>
           <Wordmark ink="white" />
@@ -96,6 +96,7 @@ export function AppShell({
           </span>
           <Link href="/">Nka site</Link>
           <form action="/auth/signout" method="post">
+            <input type="hidden" name="next" value={area === "designer" ? "/designer" : "/"} />
             <button type="submit">Sign out</button>
           </form>
         </div>

@@ -2,7 +2,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { safeNext, siteOrigin } from "@/lib/origin";
-import { sendSignInEmail, verifySignIn } from "@/lib/signin";
+import { isStudioEmail, sendSignInEmail, verifySignIn } from "@/lib/signin";
 
 export type SignInState = { ok?: boolean; error?: string; email?: string; at?: number };
 
@@ -17,6 +17,15 @@ export async function sendSignInCode(_prev: SignInState, form: FormData): Promis
   const name = String(form.get("name") ?? "").trim().slice(0, 120);
   const next = safeNext(String(form.get("next") ?? ""));
   if (!EMAIL.test(email)) return { ok: false, error: "Enter a valid email address.", at: Date.now() };
+  // The designer sign-in only works for emails Nka has added as designers. It never creates an account.
+  if (form.get("as") === "designer" && !(await isStudioEmail(email))) {
+    return {
+      ok: false,
+      error: "That email isn't set up as a designer. Use the address Nka added you with, or ask Nka to add you.",
+      email,
+      at: Date.now(),
+    };
+  }
 
   const r = await sendSignInEmail(email, { name, next, origin: await siteOrigin() });
   if (!r.ok) return { ok: false, error: r.error, email, at: Date.now() };

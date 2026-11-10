@@ -1028,6 +1028,9 @@ textarea:focus {
   flex-direction: column;
   justify-content: space-between;
 }
+.auth-designer .auth-art {
+  background: #17153b;
+}
 .auth-art .uli {
   color: var(--on-ink);
   max-width: 460px;
@@ -1221,38 +1224,74 @@ textarea:focus {
   margin: 6px 0 0;
 }
 @media (max-width: 900px) {
+  /* Phone and tablet: the sidebar becomes a header. Row 1 logo, area and organisation;
+     row 2 who's signed in; row 3 the menu, which scrolls sideways inside itself. */
   .app {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .app-side {
     position: static;
     height: auto;
+    min-width: 0;
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
-    padding: 12px 14px;
+    gap: 8px 12px;
+    padding: 12px 16px;
+  }
+  .area-badge {
+    margin: 0;
+    align-self: center;
+  }
+  .org-name {
+    padding: 0;
+  }
+  .org-switch {
+    order: 2;
+    width: 100%;
+  }
+  .app-side-switch {
+    order: 3;
+    width: 100%;
+    padding: 0;
+  }
+  .app-side-foot {
+    order: 3;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 2px 14px;
+    font-size: 13px;
+  }
+  .app-who {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 8px;
+    margin: 0;
+    min-width: 0;
+    flex: 1 1 100%;
   }
   .app-nav {
     display: flex;
+    order: 4;
+    min-width: 0;
     overflow-x: auto;
-    width: 100%;
-    order: 3;
+    margin: 0 -16px;
+    padding: 0 16px;
+    width: calc(100% + 32px);
+    scrollbar-width: none;
+  }
+  .app-nav::-webkit-scrollbar {
+    display: none;
   }
   .app-nav a {
     white-space: nowrap;
   }
   .app-nav-label {
     display: none;
-  }
-  .app-side-foot {
-    margin: 0 0 0 auto;
-    padding: 0;
-    grid-auto-flow: column;
-    gap: 14px;
-  }
-  .org-switch {
-    order: 2;
   }
 }
 

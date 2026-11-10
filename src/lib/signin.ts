@@ -9,6 +9,18 @@ import { sendSignInCodeEmail } from "@/lib/notify";
 
 export type SendResult = { ok: true } | { ok: false; error: string };
 
+// True for an email the admin has added as a designer (signed in yet or not), or the admin.
+// The designer sign-in page uses it so a designer can never make a client account by mistake.
+export async function isStudioEmail(email: string): Promise<boolean> {
+  const db = supabaseAdmin();
+  const [{ data: invited }, { data: profile }, { data: staff }] = await Promise.all([
+    db.from("talent_emails").select("email").eq("email", email).maybeSingle(),
+    db.from("profiles").select("is_talent, is_staff").eq("email", email).maybeSingle(),
+    db.from("staff_emails").select("email").eq("email", email).maybeSingle(),
+  ]);
+  return Boolean(invited || staff || profile?.is_talent || profile?.is_staff);
+}
+
 export async function sendSignInEmail(email: string, opts: { name?: string; next: string; origin: string }): Promise<SendResult> {
   try {
     return await sendOwnEmail(email, opts);

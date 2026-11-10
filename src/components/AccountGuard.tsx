@@ -4,7 +4,7 @@ import { useEffect } from "react";
 // One browser holds one sign-in. If this tab was opened as one account and the browser has
 // since signed in as another (in another tab or from an email link), reload into the right area
 // instead of showing the old account's screens.
-export function AccountGuard({ userId }: { userId: string }) {
+export function AccountGuard({ userId, signin = "/signin" }: { userId: string; signin?: string }) {
   useEffect(() => {
     let channel: BroadcastChannel | null = null;
     const moveOn = () => window.location.assign("/go?switched=1");
@@ -22,7 +22,7 @@ export function AccountGuard({ userId }: { userId: string }) {
       try {
         const r = await fetch("/api/me", { cache: "no-store" });
         const { id } = (await r.json()) as { id: string | null };
-        if (id !== userId) window.location.assign(id ? "/go?switched=1" : "/signin");
+        if (id !== userId) window.location.assign(id ? "/go?switched=1" : signin);
       } catch {
         /* offline: try again next time */
       }
@@ -34,6 +34,6 @@ export function AccountGuard({ userId }: { userId: string }) {
       document.removeEventListener("visibilitychange", check);
       window.removeEventListener("focus", check);
     };
-  }, [userId]);
+  }, [userId, signin]);
   return null;
 }

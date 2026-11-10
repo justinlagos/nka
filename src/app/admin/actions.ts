@@ -204,7 +204,7 @@ export async function addDesigner(_prev: ActionState, form: FormData): Promise<A
   await sendTo(email, "You're a designer on Nka", "Welcome to Nka", [
     "You've been added as a designer. Sign in with this email address to see the clients assigned to you.",
     "Clients see you by the name Nka gives you, never your own name or contact details. Keep all conversation in Nka.",
-  ], `${await siteOrigin()}/signin?next=/studio`, "Sign in");
+  ], `${await siteOrigin()}/designer`, "Sign in");
   revalidatePath("/admin/designers");
   return done(data === "ready" ? "Added. They can see their clients now." : "Added. They become a designer when they first sign in.");
 }

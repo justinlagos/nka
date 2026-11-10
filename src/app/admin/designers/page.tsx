@@ -93,44 +93,46 @@ export default async function Designers() {
             Add one below. Until then, new clients are led by you.
           </div>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Designer</th>
-                <th>Clients see</th>
-                <th>Partner</th>
-                <th>Clients</th>
-                <th>Open</th>
-                <th>Late</th>
-                <th>First drafts on time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ds.map((d) => {
-                const s = stats(d.id);
-                return (
-                  <tr key={d.id} className={d.talent_active ? "" : "muted"}>
-                    <td>
-                      {d.full_name || d.email}
-                      {d.full_name && (
-                        <>
-                          <br />
-                          <span className="small muted">{d.email}</span>
-                        </>
-                      )}
-                      {!d.talent_active && <span className="small"> (paused: gets no new clients)</span>}
-                    </td>
-                    <td>{d.alias || "Your designer"}</td>
-                    <td>{d.partner_id ? partnerName.get(d.partner_id) : "Direct"}</td>
-                    <td>{s.clients}</td>
-                    <td>{s.open}</td>
-                    <td className={s.late ? "is-late" : ""}>{s.late}</td>
-                    <td>{s.rec.total ? `${s.rec.onTime} of ${s.rec.total}` : "None yet"}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="table-scroll">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Designer</th>
+                  <th>Clients see</th>
+                  <th>Partner</th>
+                  <th>Clients</th>
+                  <th>Open</th>
+                  <th>Late</th>
+                  <th>First drafts on time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ds.map((d) => {
+                  const s = stats(d.id);
+                  return (
+                    <tr key={d.id} className={d.talent_active ? "" : "muted"}>
+                      <td>
+                        {d.full_name || d.email}
+                        {d.full_name && (
+                          <>
+                            <br />
+                            <span className="small muted">{d.email}</span>
+                          </>
+                        )}
+                        {!d.talent_active && <span className="small"> (paused: gets no new clients)</span>}
+                      </td>
+                      <td>{d.alias || "Your designer"}</td>
+                      <td>{d.partner_id ? partnerName.get(d.partner_id) : "Direct"}</td>
+                      <td>{s.clients}</td>
+                      <td>{s.open}</td>
+                      <td className={s.late ? "is-late" : ""}>{s.late}</td>
+                      <td>{s.rec.total ? `${s.rec.onTime} of ${s.rec.total}` : "None yet"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
         {invited.length > 0 && (
           <p className="small muted" style={{ marginTop: 12 }}>

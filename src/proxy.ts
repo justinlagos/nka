@@ -37,7 +37,8 @@ export async function proxy(request: NextRequest) {
 
   if (protectedArea && !signedIn) {
     const to = request.nextUrl.clone();
-    to.pathname = "/signin";
+    // Designers have their own sign-in page.
+    to.pathname = path === "/studio" || path.startsWith("/studio/") ? "/designer" : "/signin";
     to.search = `?next=${encodeURIComponent(path + request.nextUrl.search)}`;
     return NextResponse.redirect(to);
   }
