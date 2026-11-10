@@ -22,7 +22,7 @@ export default async function Onboarding({ searchParams }: { searchParams: Promi
           <h1>{profile.is_staff ? "Try the client side" : "Set up your workspace"}</h1>
           <p className="muted">
             {profile.is_staff
-              ? "You're studio staff. Create a test workspace to see exactly what clients see: briefs, estimates, review and the library. Your studio queue stays in the menu."
+              ? "You're the Nka admin. Create a test workspace to see exactly what clients see: briefs, dates, review and the library. Nka admin is one click away in the menu."
               : `Welcome${first ? `, ${first}` : ""}. Name your organisation; you can invite your team next.`}
           </p>
         </div>
@@ -81,7 +81,7 @@ export default async function Onboarding({ searchParams }: { searchParams: Promi
       </div>
       {profile.is_staff && (
         <p className="small">
-          <Link href="/admin">Back to the studio queue</Link>
+          <Link href="/admin">Back to Nka admin</Link>
         </p>
       )}
     </div>

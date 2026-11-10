@@ -27,7 +27,8 @@ export async function setUpFromDemo(): Promise<string> {
     console.error("Workspace setup failed", error.message);
     return "/app/onboarding?setup=failed";
   }
-  if (!made.org) return "/app";
+  // No workspace (a designer, or nothing to build): /go sends them to their own area.
+  if (!made.org) return "/go";
   (await cookies()).set(ORG_COOKIE, made.org, { path: "/", httpOnly: true, sameSite: "lax", secure: true, maxAge: 31536000 });
   if (!made.project) return "/app";
   if (!made.fresh) return `/app/welcome?p=${made.project}`;
