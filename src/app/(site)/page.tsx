@@ -1,13 +1,20 @@
 import Link from "next/link";
 import Image from "next/image";
-import { PromptHero } from "@/components/PromptHero";
 import { AudienceTabs } from "@/components/AudienceTabs";
-import { HeroColumns } from "@/components/HeroColumns";
+import { SkyHero } from "@/components/sky/SkyHero";
 import { WorkWall } from "@/components/WorkWall";
 import { StageLogo } from "@/components/identity/LivingLogo";
 import { ContactLine } from "@/components/ContactLine";
 import { FAQ, PROMISES } from "@/content/site";
-import { CAPABILITIES, CHIPS, COMPARE, FEATURES, PILLARS, SHOW, STATS, STORIES } from "@/content/landing";
+import { CAPABILITIES, COMPARE, FEATURES, PAINS, PILLARS, SHOW, SKY, STATS, STORIES } from "@/content/landing";
+
+const SKY_WORKS = SKY.map((s) => ({
+  src: `/gallery/sky/${s.img}.webp`,
+  w: SHOW[s.img].w,
+  h: SHOW[s.img].h,
+  label: s.label,
+  need: s.need,
+}));
 
 function Pic({ k, sizes, className, priority }: { k: keyof typeof SHOW; sizes: string; className?: string; priority?: boolean }) {
   const p = SHOW[k];
@@ -28,48 +35,34 @@ const CROSS = (
 export default function Home() {
   return (
     <div className="lp">
-      {/* Hero */}
-      <section className="hero2">
-        <div className="lp-wrap hero2-grid">
-          <div className="hero2-copy">
-            <h1>
-              Hand us the design work. <em>All of it.</em>
-            </h1>
-            <p className="lp-lede">
-              Brand, campaigns, decks, reports, packaging, motion and web, made by senior designers and AI on one monthly plan.
-              For agencies, marketing teams and companies that never run out of design work.
-            </p>
-            <div className="lp-actions">
-              <Link href="/demo" className="lp-btn lp-btn-lg">
-                Book a demo
-              </Link>
-              <Link href="#work" className="lp-btn lp-btn-lg lp-btn-ghost">
-                See the work
-              </Link>
-            </div>
-            <div className="lp-try">
-              <p>Try it now. What do you need designed?</p>
-              <PromptHero />
-            </div>
-            <p className="lp-fine">No contracts. Pause or cancel any month. Teams in the UK and Nigeria.</p>
-          </div>
-          <HeroColumns />
-        </div>
-      </section>
+      <SkyHero works={SKY_WORKS} />
 
-      {/* What teams hand us */}
-      <section className="chips" aria-label="What teams hand us">
-        <ul className="chips-track">
-          {[...CHIPS, ...CHIPS].map((c, i) => {
-            const p = SHOW[c.img];
-            return (
-              <li key={i} aria-hidden={i >= CHIPS.length || undefined}>
-                <Image src={p.src} alt="" width={p.w} height={p.h} sizes="40px" />
-                {c.label}
+      {/* The problem, and what changes */}
+      <section className="lp-section pains">
+        <div className="lp-wrap">
+          <div className="lp-head">
+            <h2>
+              Design shouldn&apos;t be <em>the bottleneck.</em>
+            </h2>
+            <p>
+              Most teams know the feeling: the launch is ready, the design isn&apos;t. Here is what usually slows it down, and what
+              changes with Nka.
+            </p>
+          </div>
+          <ol className="pains-list">
+            {PAINS.map((p) => (
+              <li key={p.pain}>
+                <span className="pain">{p.pain}</span>
+                <span className="arrow" aria-hidden="true">
+                  <svg viewBox="0 0 40 16">
+                    <path d="M0 8h36M30 2l6 6-6 6" />
+                  </svg>
+                </span>
+                <span className="fix">{p.fix}</span>
               </li>
-            );
-          })}
-        </ul>
+            ))}
+          </ol>
+        </div>
       </section>
 
       {/* Numbers that are true today */}
@@ -209,7 +202,7 @@ export default function Home() {
                 <b className="speed2-fig">1 min</b>
                 <p>Three finished options made by AI from your brief, in your colours and type. Keep one, or hand it to your designer to finish.</p>
               </div>
-              <Pic k="social" sizes="(max-width: 900px) 92vw, 45vw" />
+              <Pic k="boba" sizes="(max-width: 900px) 92vw, 45vw" />
             </article>
             <article className="speed2 speed2-human">
               <div className="speed2-top">
@@ -363,7 +356,7 @@ export default function Home() {
 
       {/* Banner */}
       <section className="banner2">
-        <Pic k="founder" sizes="100vw" />
+        <Pic k="billboard" sizes="100vw" />
         <div className="banner2-copy">
           <h2>
             Your whole design pipeline, <em>on one plan.</em>

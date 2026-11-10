@@ -25,17 +25,17 @@ export const IMG = {
   brochure: img("brochure-amara", 1440, 1800, "Example brochure and flyers for a health clinic"),
 };
 
-const show = (name: string, w: number, h: number, alt: string): Img => ({ src: `/show/${name}.webp`, w, h, alt });
+const show = (name: string, w: number, h: number, alt: string): Img => ({ src: `/gallery/${name}.webp`, w, h, alt });
 
 export const SERVICE_IMG: Record<string, Img> = {
-  "brand-identity": show("identity", 1800, 1195, "Example brand identity for an architecture firm: cards, letterhead, notebook and tote"),
-  "event-branding": show("stage", 1800, 1195, "Example event branding on a conference stage"),
-  "reports-documents": show("report", 1200, 1500, "Example annual report for an education charity"),
-  presentations: show("pitch", 1800, 1195, "Example Series A pitch deck on a meeting room screen"),
-  "social-ads": show("social", 1200, 1500, "Example social adverts for a bubble tea brand on three phones"),
-  "motion-video": show("launch", 1800, 1195, "Example 3D motion frame reading Launch Week"),
-  "web-product": show("website", 1800, 1195, "Example website and app for a delivery company"),
-  "print-merch": show("choco", 1200, 1500, "Example chocolate packaging with geometric patterns"),
+  "brand-identity": show("identity", 1800, 1208, "Example stationery for an architecture practice: letterpress cards, letterhead and notebook"),
+  "event-branding": show("stage", 1800, 1208, "Example event identity on a conference stage screen"),
+  "reports-documents": show("report", 1800, 1208, "Example annual report for an education charity"),
+  presentations: show("pitch", 1800, 1208, "Example Series A slide presented in a meeting room"),
+  "social-ads": show("billboard", 1800, 1208, "Example savings-app billboard over a Lagos road"),
+  "motion-video": show("motion", 1800, 1208, "Example motion ad on a station screen"),
+  "web-product": show("website", 1800, 1208, "Example delivery company website on a laptop"),
+  "print-merch": show("choco", 1200, 1490, "Example screen-printed chocolate wrappers"),
 };
 
 export const WALL: (Img & { caption: string })[] = [

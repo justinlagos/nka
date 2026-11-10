@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/inter-tight/wght.css";
-import "@fontsource/instrument-serif/400-italic.css";
+import "@fontsource/gloock/400.css";
 import "./globals.css";
 import { SITE } from "@/content/site";
 import { env } from "@/lib/env";
