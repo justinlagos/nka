@@ -17,7 +17,8 @@ const num = (v: FormDataEntryValue | null) => {
 };
 
 function refresh(projectId?: string, orgId?: string) {
-  if (projectId) revalidatePath(`/app/projects/${projectId}`);
+  if (projectId) for (const base of ["/app", "/admin", "/studio"]) revalidatePath(`${base}/projects/${projectId}`);
+  revalidatePath("/studio");
   if (orgId) revalidatePath(`/admin/clients/${orgId}`);
   revalidatePath("/admin");
 }
@@ -44,7 +45,7 @@ export async function sendEstimate(_prev: ActionState, form: FormData): Promise<
     await notifyStudio(`Needs a price: ${projectRef(p.number)} ${p.title}`, [
       `${org?.name ?? "A client"} isn't on a paid-up plan, so this brief needs a price before it goes to them.`,
       `The designer proposed delivery by ${date(due)}${hours ? `, ${hours} hours` : ""}.`,
-      `${await siteOrigin()}/app/projects/${id}`,
+      `${await siteOrigin()}/admin/projects/${id}`,
     ]);
     refresh(id);
     return done("Date proposed. The Nka admin adds the price and sends it to the client.");

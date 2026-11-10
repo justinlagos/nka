@@ -145,5 +145,31 @@ begin
   if v_int = 0 then passed := passed + 1; else failed := failed + 1; log := log || ' | designer reads partners'; end if;
   reset role;
 
+  -- 12. A designer can't have or join a client workspace
+  perform set_config('request.jwt.claims', json_build_object('sub', u_d1, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  begin perform public.create_org('Sneaky', ''); failed := failed + 1; log := log || ' | designer made a workspace';
+  exception when others then passed := passed + 1; end;
+  reset role;
+  insert into public.invites (org_id, email, role, invited_by) values (o2, 'd1@talent.test', 'member', u_c2);
+  perform set_config('request.jwt.claims', json_build_object('sub', u_d1, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  begin
+    perform public.accept_invite((select token from public.invites where org_id = o2 and email = 'd1@talent.test'));
+    failed := failed + 1; log := log || ' | designer joined a client';
+  exception when others then passed := passed + 1; end;
+  reset role;
+
+  -- 13. A client can't be made a designer
+  perform set_config('request.jwt.claims', json_build_object('sub', u_admin, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  begin perform public.admin_add_designer('c1@talent.test', 'X', null); failed := failed + 1; log := log || ' | client made designer';
+  exception when others then passed := passed + 1; end;
+  reset role;
+
+  -- 14. Sign-in codes: one every 45 seconds per address
+  if public.signin_code_allowed('codes@talent.test') = 'ok' and public.signin_code_allowed('codes@talent.test') = 'wait' then
+    passed := passed + 1; else failed := failed + 1; log := log || ' | code throttle'; end if;
+
   raise exception 'RESULTS: % passed, % failed%', passed, failed, log;
 end $$;

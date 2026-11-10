@@ -41,22 +41,31 @@ export async function GET(request: NextRequest) {
 
   // Each designer: their own list for the day. The admin: problems only.
   const open = ["submitted", "in_progress", "changes_requested", "awaiting_approval", "in_review"];
-  const [{ data: work }, { data: designers }, { data: orgs }] = await Promise.all([
+  const [{ data: work }, { data: people }, { data: orgs }] = await Promise.all([
     db.from("projects").select("id, number, title, status, estimate_due, estimate_sent_at, submitted_at, assignee, org:orgs(name, lead_id)").in("status", open).limit(1000),
-    db.from("profiles").select("id, email, full_name, alias, is_talent, is_staff").or("is_talent.eq.true,is_staff.eq.true"),
+    db.from("profiles").select("*").or("is_talent.eq.true,is_staff.eq.true"),
     db.from("orgs").select("id, name, lead_id"),
   ]);
+  // Before migration 0012 there are no designers: the admin only.
+  const designers = (people ?? (await db.from("profiles").select("*").eq("is_staff", true)).data ?? []) as {
+    id: string;
+    email: string;
+    full_name: string;
+    is_talent?: boolean;
+    is_staff: boolean;
+  }[];
   type Row = { id: string; number: number; title: string; status: string; estimate_due: string | null; estimate_sent_at: string | null; submitted_at: string | null; assignee: string | null; org: { name: string; lead_id: string | null } | null };
   const rows = (work ?? []) as unknown as Row[];
   const owner = (r: Row) => r.assignee ?? r.org?.lead_id ?? null;
-  const link = (r: Row) => `${origin}/app/projects/${r.id}`;
+  const link = (r: Row) => `${origin}/studio/projects/${r.id}`;
+  const adminLink = (r: Row) => `${origin}/admin/projects/${r.id}`;
   const line = (r: Row) => `${projectRef(r.number)} ${r.title} (${r.org?.name ?? ""})`;
   const isLate = (r: Row) => ["submitted", "in_progress", "changes_requested"].includes(r.status) && !!r.estimate_due && r.estimate_due < today;
   const needsDate = (r: Row) => r.status === "submitted" && !r.estimate_due && (r.submitted_at ?? "") < oneDayAgo;
   const needsPrice = (r: Row) => r.status === "submitted" && !!r.estimate_due && !r.estimate_sent_at;
 
   let designerEmails = 0;
-  for (const d of (designers ?? []).filter((x) => x.is_talent && !x.is_staff)) {
+  for (const d of designers.filter((x) => x.is_talent && !x.is_staff)) {
     const mine = rows.filter((r) => owner(r) === d.id);
     const late = mine.filter(isLate);
     const dueToday = mine.filter((r) => r.estimate_due === today && ["in_progress", "changes_requested"].includes(r.status));
@@ -72,7 +81,7 @@ export async function GET(request: NextRequest) {
     designerEmails++;
   }
 
-  const name = new Map((designers ?? []).map((d) => [d.id, d.full_name || d.email]));
+  const name = new Map(designers.map((d) => [d.id, d.full_name || d.email]));
   const late = rows.filter(isLate);
   const noDate = rows.filter(needsDate);
   const noPrice = rows.filter(needsPrice);
@@ -83,9 +92,9 @@ export async function GET(request: NextRequest) {
   if (problems > 0) {
     await notifyStudio(`Nka today: ${late.length} late, ${noPrice.length} to price, ${noDate.length} without a date, ${unassigned.length} without a designer`, [
       ...(byDesigner.size ? ["Late by designer: " + [...byDesigner].map(([n, c]) => `${n} ${c}`).join(", "), ""] : []),
-      ...late.map((r) => `LATE (due ${date(r.estimate_due)}, ${name.get(owner(r) ?? "") ?? "nobody"}): ${line(r)}  ${link(r)}`),
-      ...noPrice.map((r) => `NEEDS A PRICE: ${line(r)}  ${link(r)}`),
-      ...noDate.map((r) => `NO DATE AFTER A DAY (${name.get(owner(r) ?? "") ?? "nobody"}): ${line(r)}  ${link(r)}`),
+      ...late.map((r) => `LATE (due ${date(r.estimate_due)}, ${name.get(owner(r) ?? "") ?? "nobody"}): ${line(r)}  ${adminLink(r)}`),
+      ...noPrice.map((r) => `NEEDS A PRICE: ${line(r)}  ${adminLink(r)}`),
+      ...noDate.map((r) => `NO DATE AFTER A DAY (${name.get(owner(r) ?? "") ?? "nobody"}): ${line(r)}  ${adminLink(r)}`),
       ...unassigned.map((o) => `NO DESIGNER: ${o.name}  ${origin}/admin/clients/${o.id}`),
     ]);
   }

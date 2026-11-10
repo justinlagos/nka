@@ -11,8 +11,8 @@ export async function siteOrigin(): Promise<string> {
   return `${proto}://${host}`;
 }
 
-// Only allow redirects to our own pages.
-export function safeNext(next: string | null | undefined, fallback = "/app"): string {
+// Only allow redirects to our own pages. /go sends each person to their own area.
+export function safeNext(next: string | null | undefined, fallback = "/go"): string {
   if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return fallback;
   return next;
 }

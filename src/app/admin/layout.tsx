@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/AppShell";
-import { getCurrentMembership, getMemberships, requireStaff } from "@/lib/session";
+import { getMemberships, requireStaff } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Studio", robots: { index: false } };
+export const metadata: Metadata = { title: "Nka admin", robots: { index: false } };
 
-export default async function StudioLayout({ children }: { children: React.ReactNode }) {
+// Nka itself: every client, designer and partner. Anyone else is sent to their own area.
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const { profile } = await requireStaff();
-  const [memberships, current] = await Promise.all([getMemberships(), getCurrentMembership()]);
+  const memberships = await getMemberships();
   return (
-    <AppShell profile={profile} memberships={memberships} current={current}>
+    <AppShell profile={profile} area="admin" memberships={memberships}>
       {children}
     </AppShell>
   );

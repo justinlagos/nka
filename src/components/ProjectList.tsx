@@ -17,7 +17,18 @@ export type ProjectRow = {
   org_name?: string;
 };
 
-export function ProjectList({ rows, empty, showOrg = false }: { rows: ProjectRow[]; empty: React.ReactNode; showOrg?: boolean }) {
+// base: where rows link to. Clients /app/projects, the admin /admin/projects, designers /studio/projects.
+export function ProjectList({
+  rows,
+  empty,
+  showOrg = false,
+  base = "/app/projects",
+}: {
+  rows: ProjectRow[];
+  empty: React.ReactNode;
+  showOrg?: boolean;
+  base?: string;
+}) {
   if (!rows.length) return <div className="empty">{empty}</div>;
   const today = ukDate(new Date());
   return (
@@ -29,7 +40,7 @@ export function ProjectList({ rows, empty, showOrg = false }: { rows: ProjectRow
           <li key={p.id}>
             <Link
               className="proj-row"
-              href={p.status === "draft" ? `/app/projects/${p.id}/edit` : `/app/projects/${p.id}`}
+              href={p.status === "draft" && base === "/app/projects" ? `/app/projects/${p.id}/edit` : `${base}/${p.id}`}
             >
               <span className="proj-ref">{projectRef(p.number)}</span>
               <span className="proj-title">

@@ -27,12 +27,19 @@ export const getSession = cache(async () => {
   const { data } = await supabase.auth.getClaims();
   const userId = (data?.claims?.sub as string | undefined) ?? null;
   if (!userId) return { supabase, userId: null, profile: null as Profile | null };
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, email, full_name, is_staff, is_talent, alias")
-    .eq("id", userId)
-    .maybeSingle();
-  return { supabase, userId, profile: (profile as Profile | null) ?? null };
+  // select("*") so this works before and after migration 0012 adds is_talent and alias.
+  const { data: row } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
+  const profile: Profile | null = row
+    ? {
+        id: row.id,
+        email: row.email,
+        full_name: row.full_name ?? "",
+        is_staff: Boolean(row.is_staff),
+        is_talent: Boolean(row.is_talent),
+        alias: row.alias ?? "",
+      }
+    : null;
+  return { supabase, userId, profile };
 });
 
 export async function requireProfile() {
@@ -71,20 +78,29 @@ export async function requireMembership() {
 
 export async function requireStaff() {
   const s = await requireProfile();
-  if (!s.profile.is_staff) redirect("/app");
+  if (!s.profile.is_staff) redirect("/go");
   return s;
 }
 
 // Designers and the admin: anyone who works on client projects.
 export async function requireStudio() {
   const s = await requireProfile();
-  if (!s.profile.is_staff && !s.profile.is_talent) redirect("/app");
+  if (!s.profile.is_staff && !s.profile.is_talent) redirect("/go");
   return { ...s, isAdmin: s.profile.is_staff };
 }
 
 export function isDesigner(p: Pick<Profile, "is_staff" | "is_talent">) {
   return p.is_talent && !p.is_staff;
 }
+
+// Each person has one area. Everyone lands in theirs after signing in (via /go), and each
+// area sends anyone who doesn't belong there to their own.
+export type Area = "admin" | "designer" | "client";
+export function areaOf(p: Pick<Profile, "is_staff" | "is_talent">): Area {
+  return p.is_staff ? "admin" : p.is_talent ? "designer" : "client";
+}
+export const AREA_HOME: Record<Area, string> = { admin: "/admin", designer: "/studio", client: "/app" };
+export const AREA_LABEL: Record<Area, string> = { admin: "Nka admin", designer: "Designer", client: "Client" };
 
 export function canEdit(role: Role, isStaff = false) {
   return isStaff || role === "owner" || role === "admin" || role === "member";

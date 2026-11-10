@@ -20,14 +20,35 @@ export async function people(supabase: SupabaseClient, ids: (string | null | und
   const unique = [...new Set(ids.filter((x): x is string => Boolean(x)))];
   const out = new Map<string, PersonRow>();
   if (!unique.length) return out;
-  const { data } = await supabase.rpc("display_names", { p_ids: unique });
-  for (const p of (data ?? []) as { id: string; name: string; studio: boolean }[]) {
-    out.set(p.id, { id: p.id, full_name: p.name, email: "", is_staff: p.studio });
+  const { data, error } = await supabase.rpc("display_names", { p_ids: unique });
+  if (!error) {
+    for (const p of (data ?? []) as { id: string; name: string; studio: boolean }[]) {
+      out.set(p.id, { id: p.id, full_name: p.name, email: "", is_staff: p.studio });
+    }
+    return out;
   }
+  // Before migration 0012.
+  const { data: rows } = await supabase.from("profiles").select("id, full_name, email, is_staff").in("id", unique);
+  for (const p of (rows ?? []) as PersonRow[]) out.set(p.id, { ...p, email: "" });
   return out;
 }
 
 export function displayName(p: PersonRow | undefined): string {
   if (!p) return "Someone";
   return p.full_name || p.email.split("@")[0];
+}
+
+// Everyone who can lead a client: designers and the admin. Admin pages only.
+export async function studioPeople(supabase: SupabaseClient) {
+  const res = await supabase.from("profiles").select("*").or("is_staff.eq.true,is_talent.eq.true").order("full_name");
+  const rows = res.error ? (await supabase.from("profiles").select("*").eq("is_staff", true).order("full_name")).data : res.data;
+  return {
+    data: (rows ?? []).map((r) => ({
+      id: r.id as string,
+      full_name: (r.full_name as string) ?? "",
+      email: (r.email as string) ?? "",
+      alias: (r.alias as string) ?? "",
+      is_talent: Boolean(r.is_talent),
+    })),
+  };
 }

@@ -234,7 +234,7 @@ export async function makeImages(projectId: string, mode: "concepts" | "instant"
       reason === "quota"
         ? "The image service account has run out of credit. Add credit at platform.openai.com/settings/organization/billing."
         : "The image service didn't return any options.",
-      `${origin}/app/projects/${p.id}`,
+      `${origin}/admin/projects/${p.id}`,
     ]);
     // Carry on exactly as if they had picked Designer: date it and start it if the plan allows.
     await sizeAndStart(projectId, origin, "The client asked for Instant, which couldn't make options this time, so this one is yours.");

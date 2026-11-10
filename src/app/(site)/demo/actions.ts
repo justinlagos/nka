@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { getSession } from "@/lib/session";
 import { nameFromHost, setUpFromDemo } from "@/lib/demo-setup";
+import { sendSignInEmail, verifySignIn } from "@/lib/signin";
 
 const FREE_MAIL = /^(gmail|googlemail|yahoo|ymail|hotmail|outlook|live|msn|icloud|me|aol|proton|protonmail|gmx|zoho|mail)\./i;
 function companyFromEmail(email: string) {
@@ -83,18 +84,8 @@ export async function startDemo(_prev: DemoState, form: FormData): Promise<DemoS
   const session = await getSession();
   if (session.profile?.email === d.email) await buildWorkspace();
 
-  const origin = await siteOrigin();
-  const { error: otpError } = await supabase.auth.signInWithOtp({
-    email: d.email,
-    options: { emailRedirectTo: `${origin}/auth/callback?next=/demo/ready`, data: { full_name: d.full_name } },
-  });
-  if (otpError) {
-    if (/rate limit|too many|security purposes/i.test(otpError.message)) {
-      return err("We've sent a few codes to that address already. Wait a minute, then try again.", d.email);
-    }
-    console.error("Demo code not sent", otpError.message);
-    return err("Your answers are saved, but the code email didn't send. Try again in a minute.", d.email);
-  }
+  const sent = await sendSignInEmail(d.email, { name: d.full_name, next: "/demo/ready", origin: await siteOrigin() });
+  if (!sent.ok) return err(`Your answers are saved. ${sent.error}`, d.email);
   // A sign-in link opened in this browser comes back to finish the setup.
   (await cookies()).set("nka_next", "/demo/ready", { path: "/", httpOnly: true, sameSite: "lax", secure: true, maxAge: 3600 });
   return { ok: true, email: d.email, at: Date.now() };
@@ -106,9 +97,7 @@ export async function finishDemo(_prev: DemoState, form: FormData): Promise<Demo
   const token = String(form.get("code") ?? "").replace(/\D/g, "");
   if (!EMAIL.test(email)) return err("Start again with your email address.");
   if (token.length < 6) return err("Enter the code from the email.", email);
-  const supabase = await supabaseServer();
-  const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
-  if (error) return err("That code didn't work. Use the code from the most recent email.", email);
+  if (!(await verifySignIn({ email, code: token }))) return err("That code didn't work. Use the code from the most recent email.", email);
   await buildWorkspace();
   redirect("/app");
 }

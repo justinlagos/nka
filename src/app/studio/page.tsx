@@ -99,7 +99,7 @@ export default async function YourWork() {
             <p className="small muted" style={{ marginTop: -6 }}>
               {lane.hint}
             </p>
-            <ProjectList rows={laneRows} empty={null} showOrg />
+            <ProjectList rows={laneRows} empty={null} showOrg base="/studio/projects" />
           </section>
         );
       })}

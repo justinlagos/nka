@@ -57,7 +57,7 @@ export default async function StudioQueue() {
       {mine.length > 0 && (
         <section className="panel">
           <h2>Assigned to you</h2>
-          <ProjectList rows={mine} empty={null} showOrg />
+          <ProjectList rows={mine} empty={null} showOrg base="/admin/projects" />
         </section>
       )}
       {LANES.map((lane) => {
@@ -70,7 +70,7 @@ export default async function StudioQueue() {
             <p className="small muted" style={{ marginTop: -6 }}>
               {lane.hint}
             </p>
-            <ProjectList rows={laneRows} empty="Nothing here." showOrg />
+            <ProjectList rows={laneRows} empty="Nothing here." showOrg base="/admin/projects" />
           </section>
         );
       })}

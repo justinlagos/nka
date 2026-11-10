@@ -1151,6 +1151,58 @@ textarea:focus {
   padding: clamp(20px, 3vw, 40px);
   min-width: 0;
 }
+/* Each area has its own colour, so it's always clear which side of Nka you're on. */
+.area-badge {
+  align-self: flex-start;
+  margin: -6px 12px 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 650;
+  background: rgba(233, 234, 228, 0.12);
+  color: var(--on-ink);
+}
+.app-who {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 6px;
+  overflow-wrap: anywhere;
+}
+.app-who b {
+  color: var(--on-ink);
+}
+.app-side-switch {
+  margin: 0;
+  padding: 0 12px;
+  font-size: 14px;
+}
+.app-side-switch a {
+  color: var(--on-ink);
+}
+.area-designer .app-side {
+  background: #17153b;
+}
+.area-designer .area-badge {
+  background: #ff5a1f;
+  color: #fff;
+}
+.area-designer .app-nav a[aria-current="page"] {
+  box-shadow: inset 3px 0 0 #ff5a1f;
+}
+.area-designer .app-main {
+  background: #f6f5fb;
+}
+.area-admin .app-side {
+  background: #1f2a24;
+}
+.area-admin .area-badge {
+  background: #e0a526;
+  color: #1a1b3a;
+}
+.area-admin .app-main {
+  background: #f5f4ef;
+}
+
 .app-head {
   display: flex;
   align-items: flex-end;
@@ -6340,4 +6392,42 @@ a.row:focus-visible .row-name {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 18px;
+}
+
+/* Designer project: the next thing to do, front and centre. */
+.next-step {
+  background: #fff;
+  border: 2px solid #17153b;
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin: 0 0 22px;
+}
+.next-step h2 {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ff5a1f;
+  margin: 0 0 6px;
+}
+.next-step > p {
+  margin: 0 0 12px;
+  font-size: 16.5px;
+}
+.change-notes {
+  background: #fff4ee;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.change-notes p {
+  margin: 0 0 6px;
+}
+.change-notes ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.signed-in .form-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }

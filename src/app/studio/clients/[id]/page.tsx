@@ -46,7 +46,7 @@ export default async function ClientForDesigner({ params }: { params: Promise<{ 
       <div className="grid-main">
         <section className="panel">
           <h2>Projects</h2>
-          <ProjectList rows={(projects ?? []) as ProjectRow[]} empty="No projects yet." />
+          <ProjectList rows={(projects ?? []) as ProjectRow[]} empty="No projects yet." base="/studio/projects" />
         </section>
         <aside>
           <section className="panel">

@@ -446,6 +446,9 @@ declare
   v_org uuid;
 begin
   if auth.uid() is null then raise exception 'Sign in first.' using errcode = '42501'; end if;
+  if public.is_talent() then
+    raise exception 'Designer accounts work in the designer area and can''t have a client workspace.' using errcode = '42501';
+  end if;
   if coalesce(trim(p_name), '') = '' then raise exception 'Add your company name.' using errcode = '22023'; end if;
   insert into public.orgs (name, country, created_by)
     values (trim(p_name), coalesce(trim(p_country), ''), auth.uid()) returning id into v_org;
@@ -465,6 +468,7 @@ declare
   v_about text;
 begin
   if auth.uid() is null then raise exception 'Sign in first.' using errcode = '42501'; end if;
+  if public.is_talent() then return jsonb_build_object('org', null, 'project', null); end if;
   select email into v_email from public.profiles where id = auth.uid();
 
   select * into r from public.demo_requests
@@ -539,6 +543,9 @@ begin
   if exists (select 1 from public.staff_emails where email = v_email) then
     raise exception 'That email is an admin. Use another address for the designer account.' using errcode = '22023';
   end if;
+  if exists (select 1 from public.org_members m join public.profiles p on p.id = m.user_id where p.email = v_email) then
+    raise exception 'That email is on a client workspace. A designer needs an address that isn''t a client.' using errcode = '22023';
+  end if;
   insert into public.talent_emails (email, alias, partner_id, added_by)
     values (v_email, coalesce(trim(p_alias), ''), p_partner, auth.uid())
     on conflict (email) do update set alias = excluded.alias, partner_id = excluded.partner_id;
@@ -560,3 +567,63 @@ revoke execute on function public.admin_save_partner(uuid, text, text, text, num
   public.admin_add_designer(text, text, uuid), public.admin_set_designer(uuid, text, uuid, boolean) from public, anon;
 grant execute on function public.admin_save_partner(uuid, text, text, text, numeric, text, boolean),
   public.admin_add_designer(text, text, uuid), public.admin_set_designer(uuid, text, uuid, boolean) to authenticated;
+
+create or replace function public.accept_invite(p_token uuid)
+returns uuid language plpgsql security definer set search_path = public as $$
+declare
+  i public.invites%rowtype;
+  v_email text;
+begin
+  if auth.uid() is null then raise exception 'Sign in first.' using errcode = '42501'; end if;
+  if public.is_talent() then
+    raise exception 'Designer accounts can''t join a client workspace. Sign in with your own work email instead.' using errcode = '42501';
+  end if;
+  select email into v_email from public.profiles where id = auth.uid();
+  select * into i from public.invites where token = p_token for update;
+  if not found then raise exception 'This invite link is not valid.' using errcode = '22023'; end if;
+  if i.accepted_at is not null then raise exception 'This invite has already been used.' using errcode = '22023'; end if;
+  if i.email <> v_email then
+    raise exception 'This invite was sent to %. Sign in with that email to accept it.', i.email using errcode = '42501';
+  end if;
+  insert into public.org_members (org_id, user_id, role) values (i.org_id, auth.uid(), i.role)
+    on conflict (org_id, user_id) do nothing;
+  update public.invites set accepted_at = now() where id = i.id;
+  return i.org_id;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- Sign-in codes: Nka sends its own sign-in email (code and link) for new and existing
+-- accounts alike. This keeps senders honest: one code per address every 45 seconds,
+-- at most eight an hour. Server only.
+-- ---------------------------------------------------------------------------
+
+create table public.signin_codes (
+  email text primary key check (email = lower(email)),
+  sent_at timestamptz not null default now(),
+  hour_start timestamptz not null default now(),
+  hour_count int not null default 1
+);
+alter table public.signin_codes enable row level security;
+
+create or replace function public.signin_code_allowed(p_email text)
+returns text language plpgsql security definer set search_path = public as $$
+declare
+  v public.signin_codes%rowtype;
+  v_email text := lower(trim(coalesce(p_email, '')));
+begin
+  select * into v from public.signin_codes where email = v_email for update;
+  if not found then
+    insert into public.signin_codes (email) values (v_email);
+    return 'ok';
+  end if;
+  if v.sent_at > now() - interval '45 seconds' then return 'wait'; end if;
+  if v.hour_start > now() - interval '1 hour' and v.hour_count >= 8 then return 'hour'; end if;
+  update public.signin_codes set
+    sent_at = now(),
+    hour_start = case when v.hour_start > now() - interval '1 hour' then v.hour_start else now() end,
+    hour_count = case when v.hour_start > now() - interval '1 hour' then v.hour_count + 1 else 1 end
+  where email = v_email;
+  return 'ok';
+end $$;
+revoke execute on function public.signin_code_allowed(text) from public, anon, authenticated;
+grant execute on function public.signin_code_allowed(text) to service_role;

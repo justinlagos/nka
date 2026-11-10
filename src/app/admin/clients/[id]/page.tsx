@@ -4,7 +4,7 @@ import { ActionForm } from "@/components/ActionForm";
 import { ProjectList, type ProjectRow } from "@/components/ProjectList";
 import { addLedgerEntry, expireBudget, setLead, setPlan } from "../../actions";
 import { requireStaff } from "@/lib/session";
-import { people, displayName } from "@/lib/data";
+import { people, displayName , studioPeople } from "@/lib/data";
 import { FLEX, PLANS, planLabel } from "@/lib/plans";
 import { summariseBudget, type LedgerEntry } from "@/lib/budget";
 import { date, dateTime, money } from "@/lib/format";
@@ -20,7 +20,7 @@ export default async function Client({ params }: { params: Promise<{ id: string 
     supabase.from("projects").select("id, number, title, status, deadline, estimate_due, updated_at").eq("org_id", id).order("updated_at", { ascending: false }).limit(100),
     supabase.from("budget_ledger").select("id, kind, amount, effective_on, note").eq("org_id", id).order("effective_on", { ascending: false }),
     supabase.from("brand_books").select("about, updated_at").eq("org_id", id).maybeSingle(),
-    supabase.from("profiles").select("id, full_name, email, alias, is_talent").or("is_staff.eq.true,is_talent.eq.true").order("full_name"),
+    studioPeople(supabase),
     supabase.from("lead_changes").select("id, from_user, to_user, note, created_at").eq("org_id", id).order("created_at", { ascending: false }).limit(20),
   ]);
   const leads = leadRows ?? [];
@@ -50,7 +50,7 @@ export default async function Client({ params }: { params: Promise<{ id: string 
         <div>
           <section className="panel">
             <h2>Projects</h2>
-            <ProjectList rows={(projects ?? []) as ProjectRow[]} empty="No projects yet." />
+            <ProjectList rows={(projects ?? []) as ProjectRow[]} empty="No projects yet." base="/admin/projects" />
           </section>
           {(org.plan === "flex" || (ledger ?? []).length > 0) && (
             <section className="panel">

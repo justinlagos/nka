@@ -240,7 +240,7 @@ export async function decideFile(input: { deliverableId: string; projectId: stri
     input.decision === "approved" ? "The client approved a file" : "The client asked for changes",
     input.note ? `What they said: ${input.note}` : "",
   );
-  revalidatePath(`/app/projects/${input.projectId}`);
+  for (const base of ["/app", "/admin", "/studio"]) revalidatePath(`${base}/projects/${input.projectId}`);
   return done(input.decision === "approved" ? "Approved." : "Changes sent to the studio.");
 }
 
@@ -267,7 +267,7 @@ export async function addComment(input: {
   });
   if (error) return fail(error);
   await tellOtherSide(input.projectId, input.orgId, userId, body);
-  revalidatePath(`/app/projects/${input.projectId}`);
+  for (const base of ["/app", "/admin", "/studio"]) revalidatePath(`${base}/projects/${input.projectId}`);
   return done();
 }
 
@@ -278,7 +278,7 @@ async function tellOtherSide(projectId: string, orgId: string, author: string, b
   const since = new Date(Date.now() - 10 * 60_000).toISOString();
   const [{ count }, { data: me }, { data: p }] = await Promise.all([
     db.from("comments").select("id", { count: "exact", head: true }).eq("project_id", projectId).eq("author", author).gte("created_at", since),
-    db.from("profiles").select("full_name, is_staff, is_talent").eq("id", author).maybeSingle(),
+    db.from("profiles").select("*").eq("id", author).maybeSingle(),
     db.from("projects").select("number, title").eq("id", projectId).maybeSingle(),
   ]);
   if ((count ?? 0) > 1 || !p) return;
@@ -316,7 +316,7 @@ export async function setResolved(input: { commentId: string; projectId: string;
   const { supabase } = await requireProfile();
   const { error } = await supabase.from("comments").update({ resolved: input.resolved }).eq("id", input.commentId);
   if (error) return fail(error);
-  revalidatePath(`/app/projects/${input.projectId}`);
+  for (const base of ["/app", "/admin", "/studio"]) revalidatePath(`${base}/projects/${input.projectId}`);
   return done();
 }
 

@@ -26,7 +26,7 @@ export async function proxy(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const signedIn = Boolean(data?.claims?.sub);
   const path = request.nextUrl.pathname;
-  const protectedArea = path === "/app" || path.startsWith("/app/") || path === "/admin" || path.startsWith("/admin/");
+  const protectedArea = ["/app", "/admin", "/studio", "/go"].some((p) => path === p || path.startsWith(`${p}/`));
 
   if (protectedArea && !signedIn) {
     const to = request.nextUrl.clone();

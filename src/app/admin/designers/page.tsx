@@ -292,7 +292,7 @@ export default async function Designers() {
                   <b>{nameOf.get(e.actor!)}</b> {EVENT[e.kind]}
                   {e.kind === "deliverable_added" && d.title ? ` (${d.title} v${d.version})` : ""}
                   {d.due && e.kind !== "deliverable_added" ? `, due ${date(d.due)}` : ""} on{" "}
-                  <Link href={`/app/projects/${e.project_id}`}>{p ? `${projectRef(p.number)} ${p.title}` : "a project"}</Link>
+                  <Link href={`/admin/projects/${e.project_id}`}>{p ? `${projectRef(p.number)} ${p.title}` : "a project"}</Link>
                   {p?.org?.name ? ` for ${p.org.name}` : ""}
                   <br />
                   <span className="small">{dateTime(e.created_at)}</span>
