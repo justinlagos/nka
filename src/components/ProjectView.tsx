@@ -179,7 +179,7 @@ function ProjectView({
 
         <aside className="pv-side">
           <div className="pv-top">
-            <span className={`pv-kind pv-kind-${p.kind}`}>{KIND_LABEL[p.kind]}</span>
+            {p.kind === "demo" ? <span className="pv-kind pv-kind-demo">{KIND_LABEL.demo}</span> : <span />}
             <div className="pv-tools">
               <button type="button" onClick={() => onGo(prev.id)} aria-label={`Previous project: ${prev.brand}`} title={prev.brand}>
                 <svg viewBox="0 0 24 24" aria-hidden="true">

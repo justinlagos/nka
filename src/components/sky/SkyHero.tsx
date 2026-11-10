@@ -229,7 +229,6 @@ export function SkyHero() {
         </div>
       )}
 
-      <p className="sky-note">Studio concepts for invented brands</p>
 
       <nav className="sky-index" aria-label="Projects in the sky">
         <ul>

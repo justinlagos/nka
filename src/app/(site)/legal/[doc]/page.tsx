@@ -56,7 +56,7 @@ const DOCS: Record<string, { title: string; updated: string; body: { h: string; 
       {
         h: "Work and people shown on our website",
         p: [
-          "The projects on our website are studio concepts: work we made for invented brands to show the range of what we do. None of them is client work, and the brands, people and figures in them are made up.",
+          "The projects, films and images on our website are studio concepts: work we made for invented brands to show the range of what we do. None of them is client work, and the brands, people and figures in them are made up.",
           "People in the photographs and portraits on our website are illustrations. They are not our team, our clients or people who have used Nka.",
         ],
       },

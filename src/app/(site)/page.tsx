@@ -177,7 +177,6 @@ export default function Home() {
               </li>
             ))}
           </ul>
-          <p className="lp-note">Photos are illustrations of the work, not portraits of our team.</p>
         </div>
       </section>
 
@@ -193,7 +192,6 @@ export default function Home() {
             </p>
           </div>
           <ProjectReel />
-          <p className="lp-note">Studio concepts for invented brands, made to show the range of work. None is client work.</p>
         </div>
         <WorkWall />
       </section>

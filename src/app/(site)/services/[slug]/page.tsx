@@ -54,12 +54,10 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
           {SVC_FILM[service.slug] ? (
             <figure className="svc-film">
               <FilmPlayer {...SVC_FILM[service.slug]} />
-              <figcaption className="example-note">Studio concepts for invented brands, in motion.</figcaption>
             </figure>
           ) : img && (
             <figure style={{ margin: 0 }}>
               <Image className="svc-hero-img" src={img.src} alt={img.alt} width={img.w} height={img.h} priority sizes="(max-width: 1240px) 92vw, 1180px" />
-              <figcaption className="example-note">Example piece for a made-up brand.</figcaption>
             </figure>
           )}
         </div>

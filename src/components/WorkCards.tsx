@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { KIND_LABEL, PROJECT_BY_ID } from "@/content/projects";
+import { PROJECT_BY_ID } from "@/content/projects";
 import { openProject } from "@/lib/projectView";
 
 // A row of projects that open in the project view. Films preview when you point at them.
@@ -53,8 +53,7 @@ function Card({ id }: { id: string }) {
         <span className="reel-cap">
           <b>{p.brand}</b>
           <span>{p.category}</span>
-          <small>{KIND_LABEL[p.kind]}</small>
-        </span>
+                  </span>
       </button>
     </li>
   );

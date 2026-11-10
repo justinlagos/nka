@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { FILM_PROJECTS, KIND_LABEL, type Project } from "@/content/projects";
+import { FILM_PROJECTS, type Project } from "@/content/projects";
 import { openProject } from "@/lib/projectView";
 
 // The film projects as case studies. Each card plays a short preview when you point at it
@@ -61,7 +61,7 @@ function ReelCard({ p }: { p: Project }) {
         <b>{p.brand}</b>
         <span>{p.category}</span>
         <small>
-          {KIND_LABEL[p.kind]}, film and {pieces - 1} pieces
+          Film and {pieces - 1} pieces
         </small>
       </span>
     </button>
