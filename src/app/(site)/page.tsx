@@ -3,18 +3,14 @@ import Image from "next/image";
 import { AudienceTabs } from "@/components/AudienceTabs";
 import { SkyHero } from "@/components/sky/SkyHero";
 import { WorkWall } from "@/components/WorkWall";
+import { ProjectReel } from "@/components/ProjectReel";
+import { ProjectViewHost } from "@/components/ProjectView";
+import { FilmPlayer } from "@/components/FilmPlayer";
+import { PromptHero } from "@/components/PromptHero";
 import { StageLogo } from "@/components/identity/LivingLogo";
 import { ContactLine } from "@/components/ContactLine";
 import { FAQ, PROMISES } from "@/content/site";
-import { CAPABILITIES, COMPARE, FEATURES, PAINS, PILLARS, SHOW, SKY, STATS, STORIES } from "@/content/landing";
-
-const SKY_WORKS = SKY.map((s) => ({
-  src: `/gallery/sky/${s.img}.webp`,
-  w: SHOW[s.img].w,
-  h: SHOW[s.img].h,
-  label: s.label,
-  need: s.need,
-}));
+import { CAPABILITIES, COMPARE, FEATURES, PAINS, PEOPLE, PRICE_STEPS, SHOW, STATS } from "@/content/landing";
 
 function Pic({ k, sizes, className, priority }: { k: keyof typeof SHOW; sizes: string; className?: string; priority?: boolean }) {
   const p = SHOW[k];
@@ -35,7 +31,7 @@ const CROSS = (
 export default function Home() {
   return (
     <div className="lp">
-      <SkyHero works={SKY_WORKS} />
+      <SkyHero />
 
       {/* The problem, and what changes */}
       <section className="lp-section pains">
@@ -77,86 +73,46 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Partner */}
+      {/* Who does the work */}
       <section className="lp-section lp-pt0">
-        <div className="lp-wrap split2">
-          <div className="split2-img">
-            <Pic k="team" sizes="(max-width: 900px) 92vw, 48vw" />
-          </div>
-          <div className="split2-copy">
-            <h2>
-              The design team your team <em>has been asking for.</em>
-            </h2>
-            <p className="lp-lede">
-              Plug in senior designers who already know your brand, with AI built into every step. You say what you need; we
-              make it, size it and ship it.
-            </p>
-            <p>No hiring, no onboarding project, no new freelancer every month. One plan, one workspace, one named designer.</p>
-            <div className="lp-actions">
-              <Link href="/demo" className="lp-btn lp-btn-ink">
-                Book a demo
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Pillars */}
-      <section className="lp-section lp-night">
         <div className="lp-wrap">
-          <h2 className="lp-center">
-            Senior talent. Smart systems. <em>Built to keep up with you.</em>
-          </h2>
-          <ul className="pillars">
-            {PILLARS.map((p) => (
-              <li key={p.title} className={`tint-${p.tint}`}>
-                <div className="pillar-img">
-                  <Pic k={p.img} sizes="(max-width: 900px) 92vw, 30vw" />
+          <div className="lp-head">
+            <h2>
+              Real designers. <em>AI where it saves time.</em>
+            </h2>
+            <p>
+              One senior designer leads your account and learns your brand. Specialists join when a brief needs motion,
+              illustration or print. AI makes quick first options and keeps the admin out of their way.
+            </p>
+          </div>
+          <ul className="people">
+            {PEOPLE.map((x) => (
+              <li key={x.title}>
+                <div className="people-img">
+                  <Image src={x.src} alt={x.alt} width={x.w} height={x.h} sizes="(max-width: 900px) 92vw, 30vw" />
                 </div>
-                <div className="pillar-copy">
-                  <h3>{p.title}</h3>
-                  <p>{p.body}</p>
-                </div>
+                <h3>{x.title}</h3>
+                <p>{x.body}</p>
               </li>
             ))}
           </ul>
+          <p className="lp-note">Photos are illustrations of the work, not portraits of our team.</p>
         </div>
       </section>
 
-      {/* One brand, every touchpoint */}
+      {/* Projects as systems */}
       <section className="lp-section" id="work">
         <div className="lp-wrap">
           <div className="lp-head">
             <h2>
-              One brand, <em>every touchpoint.</em>
+              One brief, <em>a whole system.</em>
             </h2>
             <p>
-              A campaign is never one file. We keep the system together from the packaging to the billboard to the feed. Here is the
-              kind of range one plan covers.
+              A project is never one file. Open one to watch the film, see every piece it covers and start a brief like it.
             </p>
           </div>
-          <div className="stories">
-            {STORIES.map((s, i) => (
-              <article key={s.brand} className={`story ${i % 2 ? "story-flip" : ""}`}>
-                <div className="story-big">
-                  <Pic k={s.big} sizes="(max-width: 900px) 92vw, 60vw" />
-                </div>
-                <div className="story-small">
-                  <Pic k={s.small} sizes="(max-width: 900px) 92vw, 30vw" />
-                </div>
-                <div className="story-cap">
-                  <h3>{s.brand}</h3>
-                  <p>{s.what}</p>
-                  <ul>
-                    {s.tags.map((t) => (
-                      <li key={t}>{t}</li>
-                    ))}
-                  </ul>
-                </div>
-              </article>
-            ))}
-          </div>
-          <p className="lp-note">Every brand and piece shown is a made-up example, created to show the range of work.</p>
+          <ProjectReel />
+          <p className="lp-note">Studio concepts for invented brands, made to show the range of work. None is client work.</p>
         </div>
         <WorkWall />
       </section>
@@ -225,55 +181,14 @@ export default function Home() {
             </h2>
             <p>No email chains, no lost versions, no chasing. Everything your team and ours needs, in one place.</p>
           </div>
-          <div className="lp-app" aria-label="The nka.studio workspace">
-            <div className="lp-app-bar">
-              <span />
-              <span />
-              <span />
-              <em>nka.studio/app</em>
-            </div>
-            <div className="lp-app-body">
-              <aside className="lp-app-side">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/brand/signature-white.png" alt="" width={677} height={630} />
-                <span className="on">Projects</span>
-                <span>Library</span>
-                <span>Brand book</span>
-                <span>Team</span>
-              </aside>
-              <div className="lp-app-main">
-                <div className="lp-app-title">
-                  <div>
-                    <small>NKA-1043</small>
-                    <b>Restaurant launch, print set</b>
-                  </div>
-                  <span className="lp-pill">Ready for review</span>
-                </div>
-                <div className="lp-app-review">
-                  <Image src={SHOW.restaurant.src} alt="" width={SHOW.restaurant.w} height={SHOW.restaurant.h} sizes="(max-width: 900px) 80vw, 40vw" />
-                  <span className="lp-pin" style={{ left: "24%", top: "62%" }}>
-                    1
-                  </span>
-                  <span className="lp-pin" style={{ left: "70%", top: "70%" }}>
-                    2
-                  </span>
-                </div>
-              </div>
-              <div className="lp-app-thread">
-                <div className="lp-msg">
-                  <b>1</b> Can the menu title sit a little higher?
-                </div>
-                <div className="lp-msg">
-                  <b>2</b> Use the darker leaf pattern on the napkins.
-                </div>
-                <div className="lp-msg lp-msg-us">Done. Version 2 is up for review.</div>
-                <div className="lp-app-actions">
-                  <span className="lp-btn lp-btn-sm">Approve</span>
-                  <span className="lp-btn lp-btn-sm lp-btn-line">Ask for changes</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <figure className="lp-film">
+            <FilmPlayer
+              src="/films/film-workflow.mp4"
+              poster="/films/film-workflow.jpg"
+              label="Film: a brief for social ads going from a sentence to six finished sizes in the Nka workspace"
+            />
+            <figcaption>Product demonstration: a brief for social ads, from one sentence to six finished sizes.</figcaption>
+          </figure>
           <ul className="lp-features">
             {FEATURES.map((f) => (
               <li key={f.title}>
@@ -354,16 +269,35 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Banner */}
-      <section className="banner2">
-        <Pic k="billboard" sizes="100vw" />
-        <div className="banner2-copy">
-          <h2>
-            Your whole design pipeline, <em>on one plan.</em>
-          </h2>
-          <Link href="/demo" className="lp-btn lp-btn-lg">
-            Book a demo
-          </Link>
+      {/* How pricing works */}
+      <section className="lp-section lp-mist" id="pricing">
+        <div className="lp-wrap">
+          <div className="lp-head">
+            <h2>
+              How pricing <em>works.</em>
+            </h2>
+            <p>
+              One monthly price, agreed with you and fixed in writing. Every plan includes your named designer, revisions and
+              free resizes.
+            </p>
+          </div>
+          <ol className="steps3">
+            {PRICE_STEPS.map((x, i) => (
+              <li key={x.title}>
+                <span className="steps3-n">{i + 1}</span>
+                <b>{x.title}</b>
+                <p>{x.body}</p>
+              </li>
+            ))}
+          </ol>
+          <div className="lp-actions">
+            <Link href="/demo" className="lp-btn lp-btn-lg">
+              Start a project
+            </Link>
+            <Link href="/pricing" className="lp-btn lp-btn-lg lp-btn-ghost">
+              See plans
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -391,12 +325,23 @@ export default function Home() {
           </div>
           <div>
             <h2>
-              Your next twelve months of design, <em>handled.</em>
+              Seen what we can do? <em>Tell us what you need.</em>
             </h2>
-            <p className="lp-lede">
-              Book a demo. Say what you need and add your website, and your workspace opens in your brand with the first brief
-              already written.
-            </p>
+            <p className="lp-lede">One line is enough. It becomes your first brief, and your workspace opens in your brand.</p>
+            <div className="close2-ask">
+              <PromptHero id="need-close" />
+            </div>
+            <ol className="close2-next">
+              <li>
+                <b>Now</b> Say what you need, add your website and confirm your email.
+              </li>
+              <li>
+                <b>Half a minute later</b> Your workspace opens with your brand and the brief written.
+              </li>
+              <li>
+                <b>Within a working day</b> Your designer calls. You get a monthly price in writing. No card until you say yes.
+              </li>
+            </ol>
             <div className="lp-actions">
               <Link href="/demo" className="lp-btn lp-btn-lg lp-btn-ink">
                 Book a demo
@@ -409,6 +354,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      <ProjectViewHost />
     </div>
   );
 }

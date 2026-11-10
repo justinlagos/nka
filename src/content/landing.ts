@@ -35,35 +35,6 @@ export const SHOW = {
 };
 export type ShowKey = keyof typeof SHOW;
 
-// The 3D hero. The first nine take the hand-placed opening slots, in order:
-// top-left big, small, left small, bottom-left big, top-right small, top-right big, right small,
-// centre-right small, bottom-right big.
-export const SKY: { img: ShowKey; label: string; need: string }[] = [
-  { img: "runa", label: "Campaign", need: "A poster and social campaign for our launch" },
-  { img: "pocketa", label: "Paid social", need: "Social ads for our app launch" },
-  { img: "books", label: "Book covers", need: "A series of book covers" },
-  { img: "impact", label: "Annual report", need: "Our annual report" },
-  { img: "vela", label: "App design", need: "Screens for our app" },
-  { img: "stage", label: "Event branding", need: "Branding for our conference: stage, badges and social" },
-  { img: "skincare", label: "Packaging", need: "Packaging for our skincare range" },
-  { img: "boba", label: "Social campaign", need: "A set of social posts for a new product" },
-  { img: "billboard", label: "Out of home", need: "A billboard campaign" },
-  { img: "coffee", label: "Brand identity", need: "A brand identity for our café: logo, packaging and cups" },
-  { img: "ozo", label: "Merchandise", need: "Merchandise for our brand" },
-  { img: "website", label: "Website", need: "A new website for our company" },
-  { img: "magazine", label: "Editorial", need: "A magazine feature layout" },
-  { img: "choco", label: "Packaging", need: "Packaging for our chocolate range" },
-  { img: "badges", label: "Event print", need: "Badges, programme and merch for our event" },
-  { img: "identity", label: "Stationery", need: "Stationery and a brand guide" },
-  { img: "pitch", label: "Pitch deck", need: "A pitch deck for our Series A" },
-  { img: "restaurant", label: "Restaurant identity", need: "Menus and branding for our restaurant" },
-  { img: "report", label: "Annual report", need: "Our annual report" },
-  { img: "merch", label: "Merchandise", need: "Merchandise for our brand" },
-  { img: "signage", label: "Signage", need: "Signage and wayfinding for our office" },
-  { img: "social", label: "Social", need: "Social posts for a new product" },
-  { img: "motion", label: "Motion", need: "A short motion ad for screens" },
-];
-
 export const STATS = [
   { figure: "1 min", label: "Three on-brand options from Instant, made by AI" },
   { figure: "2 days", label: "Typical first draft from your named designer" },
@@ -79,31 +50,48 @@ export const PAINS: { pain: string; fix: string }[] = [
   { pain: "AI tools give you a start, not a finished file.", fix: "Instant options in a minute, finished by a designer when it matters." },
 ];
 
-export const PILLARS: { title: string; body: string; img: ShowKey; tint: string }[] = [
+// Who does the work. The photos are illustrations, said so on the page.
+export const PEOPLE: { title: string; body: string; src: string; w: number; h: number; alt: string }[] = [
   {
-    title: "One monthly plan",
-    body: "Send as much as your plan runs at once. Pause in a quiet month, cancel any month.",
-    img: "pitch",
-    tint: "peach",
+    title: "A named lead designer",
+    body: "The same senior designer leads your account and learns your brand. No new freelancer every month.",
+    src: "/gallery/studio-proofs.webp",
+    w: 1800,
+    h: 1200,
+    alt: "A creative director smiling at a long table of printed proofs",
   },
   {
-    title: "A named senior designer",
-    body: "The same person leads your account and learns your brand. No new freelancer every month.",
-    img: "designer",
-    tint: "sky",
+    title: "Every discipline on one plan",
+    body: "Brand, print, digital, motion and presentations. Specialists join a brief when it needs them.",
+    src: "/gallery/studio-motion.webp",
+    w: 1800,
+    h: 1200,
+    alt: "A motion designer at work on an animation timeline",
   },
   {
-    title: "AI when it can't wait",
-    body: "Instant makes three on-brand options in about a minute. Keep one or hand it to your designer.",
-    img: "vela",
-    tint: "mint",
+    title: "Reviewed in one place",
+    body: "Comment on the file, approve in a click, and every approved size lands in your library.",
+    src: "/gallery/studio-wall.webp",
+    w: 1800,
+    h: 1200,
+    alt: "A team reviewing slides pinned to the wall",
   },
 ];
 
-// One brand across every touchpoint: shows a system held together across formats.
-export const STORIES: { brand: string; what: string; tags: string[]; big: ShowKey; small: ShowKey }[] = [
-  { brand: "Runa", what: "A running brand's city campaign, from the street wall to the station screen.", tags: ["Campaign", "Out of home", "Motion"], big: "runa", small: "motion" },
-  { brand: "Northlight Summit", what: "One identity across the main stage, the badges, the programme and the tote.", tags: ["Event branding", "Print", "Merchandise"], big: "stage", small: "badges" },
+// What happens before anyone pays.
+export const PRICE_STEPS: { title: string; body: string }[] = [
+  {
+    title: "Tell us what you need",
+    body: "Start a project or book a demo. Add your website and your workspace opens in your brand, with the first brief written.",
+  },
+  {
+    title: "Agree a monthly price",
+    body: "On a 20-minute call we work out how much design you need running at once. The price comes in writing and only changes if you agree.",
+  },
+  {
+    title: "Say yes, then start",
+    body: "No card until you say yes. Pause in a quiet month, cancel any month.",
+  },
 ];
 
 export const WALL: { img: ShowKey; label: string }[][] = [

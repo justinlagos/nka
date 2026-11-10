@@ -1,0 +1,136 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="node_modules/@fontsource-variable/plus-jakarta-sans/index.css">
+<link rel="stylesheet" href="node_modules/@fontsource-variable/inter-tight/wght.css">
+<script src="lib.js"></script><script src="homog.js"></script>
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1600px;height:900px;overflow:hidden;background:#0d1226;font-family:"Plus Jakarta Sans Variable",sans-serif;color:#0d1226}
+.layer{position:absolute;inset:0;overflow:hidden}
+/* website */
+.site{position:absolute;left:0;top:0;width:1600px;height:1000px;background:#f4f6fb;overflow:hidden}
+.page{position:absolute;left:0;top:0;width:1600px}
+.nav{height:90px;display:flex;align-items:center;padding:0 70px;gap:40px;font-weight:600;font-size:18px}
+.logo{font-weight:800;font-size:34px;letter-spacing:-.04em;color:#2747d6;margin-right:20px}
+.logo i{display:inline-block;width:14px;height:14px;border-radius:50%;background:#ffd23f;margin-left:3px}
+.nav .cta{margin-left:auto;background:#2747d6;color:#fff;border-radius:12px;padding:14px 22px}
+.hero{display:grid;grid-template-columns:1.05fr 1fr;gap:40px;padding:40px 70px 0}
+.hero h1{font-size:92px;line-height:.98;letter-spacing:-.045em;font-weight:800}
+.hero h1 span{color:#2747d6}
+.hero p{font-size:22px;line-height:1.45;color:#4a5169;margin:26px 0 34px;max-width:30ch}
+.form{background:#fff;border-radius:22px;padding:20px;display:grid;gap:12px;box-shadow:0 20px 50px rgba(13,18,38,.08);max-width:600px}
+.fld{border:1.5px solid #dfe3ee;border-radius:14px;padding:14px 18px;font-size:18px;display:flex;gap:12px;align-items:center}
+.fld small{width:80px;color:#8a90a6;font-weight:600;font-size:14px}
+.fld .v{font-weight:600}.fld .c{width:2px;height:22px;background:#2747d6}
+.go{background:#ffd23f;color:#0d1226;border-radius:14px;padding:18px;font-weight:800;font-size:19px;text-align:center}
+.quote{margin-top:12px;font-weight:700;color:#2747d6;font-size:18px}
+.art{position:relative;height:620px;border-radius:32px;background:#2747d6;overflow:hidden}
+.art .sun{position:absolute;right:-60px;top:-60px;width:320px;height:320px;border-radius:50%;background:#ffd23f}
+.van{position:absolute;left:70px;bottom:120px;width:420px;height:190px}
+.van .body{position:absolute;left:0;bottom:30px;width:300px;height:150px;background:#fff;border-radius:22px}
+.van .cab{position:absolute;left:290px;bottom:30px;width:130px;height:110px;background:#fff;border-radius:16px 36px 16px 16px}
+.van .win{position:absolute;left:320px;bottom:90px;width:70px;height:38px;background:#9db0ff;border-radius:6px 22px 6px 6px}
+.van .stripe{position:absolute;left:24px;bottom:96px;font-weight:800;font-size:40px;color:#2747d6;letter-spacing:-.04em}
+.van .wh{position:absolute;bottom:0;width:66px;height:66px;border-radius:50%;background:#0d1226;border:14px solid #2b2f45}
+.road{position:absolute;left:0;right:0;bottom:90px;height:6px;background:repeating-linear-gradient(90deg,#ffd23f 0 60px,transparent 60px 110px)}
+.feat{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:90px 70px 0}
+.feat div{background:#fff;border-radius:24px;padding:34px;box-shadow:0 14px 40px rgba(13,18,38,.06)}
+.feat b{display:block;font-size:28px;letter-spacing:-.02em;margin:18px 0 8px}
+.feat span{font-size:18px;color:#4a5169;line-height:1.45}
+.feat i{display:block;width:56px;height:56px;border-radius:16px;background:#e8ecff;position:relative}
+.feat i::after{content:"";position:absolute;inset:16px;border-radius:50%;background:#2747d6}
+.band{margin:80px 70px 0;border-radius:32px;background:#0d1226;color:#fff;padding:60px;display:flex;justify-content:space-between;align-items:center}
+.band h2{font-size:56px;letter-spacing:-.04em;line-height:1}
+.band .go{padding:18px 30px}
+.browser{position:absolute;left:110px;top:56px;width:1380px;height:788px;border-radius:18px;overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.4);background:#fff}
+.browser .bar{height:40px;background:#e7e9f0;display:flex;align-items:center;gap:8px;padding:0 16px}
+.browser .bar i{width:12px;height:12px;border-radius:50%;background:#c7cad6}
+.browser .bar em{font-style:normal;margin-left:14px;font-size:14px;color:#666;background:#fff;border-radius:8px;padding:4px 14px;font-family:"Inter Tight Variable"}
+.browser .vp{position:absolute;top:40px;left:0;width:1600px;height:1000px;transform-origin:0 0;transform:scale(.8625)}
+/* app */
+.app{position:absolute;left:0;top:0;width:390px;height:844px;background:#f4f6fb;overflow:hidden;font-size:16px}
+.map{position:absolute;inset:0 0 300px 0;background:#e9edf5}
+.map svg{position:absolute;inset:0}
+.sheet{position:absolute;left:0;right:0;bottom:0;height:330px;background:#fff;border-radius:28px 28px 0 0;padding:26px 24px;box-shadow:0 -10px 30px rgba(13,18,38,.08)}
+.eta{font-size:15px;color:#8a90a6;font-weight:600}.eta b{display:block;font-size:34px;color:#0d1226;letter-spacing:-.03em;margin-top:2px}
+.cour{display:flex;align-items:center;gap:12px;margin:18px 0;padding:14px;border-radius:16px;background:#f4f6fb}
+.cour .av{width:46px;height:46px;border-radius:50%;background:#2747d6;color:#fff;display:grid;place-items:center;font-weight:800}
+.steps{display:flex;gap:6px}.steps i{flex:1;height:6px;border-radius:3px;background:#dfe3ee}.steps i.on{background:#2747d6}
+.stepl{display:flex;justify-content:space-between;font-size:13px;color:#8a90a6;margin-top:8px;font-weight:600}
+.apphead{position:absolute;left:18px;right:18px;top:54px;display:flex;justify-content:space-between;align-items:center}
+.apphead .logo{font-size:26px}
+.pill{background:#fff;border-radius:999px;padding:8px 14px;font-weight:700;font-size:14px;box-shadow:0 6px 16px rgba(13,18,38,.08)}
+.phoneframe{position:absolute;width:430px;height:884px;border-radius:64px;background:#0d1226;padding:20px;box-shadow:0 40px 80px rgba(0,0,0,.45)}
+.phoneframe .scr{position:relative;width:390px;height:844px;border-radius:46px;overflow:hidden}
+.side{position:absolute;left:760px;top:300px;color:#fff;max-width:640px}
+.side h2{font-size:84px;letter-spacing:-.045em;line-height:.98;font-weight:800}
+.side p{font-size:24px;color:#aab3d6;margin-top:22px;line-height:1.4}
+.photo{position:absolute;left:0;top:0;transform-origin:0 0}
+.photo img{position:absolute;left:0;top:0;display:block}
+.cap{position:absolute;left:56px;bottom:46px;color:#fff;font-family:"Inter Tight Variable";font-weight:600;font-size:22px;padding:10px 18px;border-radius:999px;background:rgba(0,0,0,.45)}
+.endc{position:absolute;inset:0;display:grid;place-items:center;text-align:center;background:#2747d6;color:#fff}
+.endc b{font-size:90px;font-weight:800;letter-spacing:-.05em;display:block}
+.endc span{font-family:"Inter Tight Variable";font-size:24px;font-weight:600;opacity:.85}
+.cursor{position:absolute;width:28px;height:28px;z-index:40;filter:drop-shadow(0 3px 4px rgba(0,0,0,.3))}
+</style></head><body>
+<template id="siteT"><div class="site"><div class="page">
+ <div class="nav"><span class="logo">haulo<i></i></span><span>Send</span><span>Business</span><span>Track</span><span>Help</span><span class="cta">Book a pickup</span></div>
+ <div class="hero"><div><h1>Deliver anything, <span>anywhere.</span></h1><p>Same-day pickup and delivery across Lagos. Book in a minute, track every step.</p>
+   <div class="form"><div class="fld"><small>Pickup</small><span class="v a"></span><span class="c ca"></span></div><div class="fld"><small>Drop-off</small><span class="v b"></span><span class="c cb"></span></div><div class="go">Get a pickup time</div><div class="quote">Rider at your door in 25 minutes</div></div></div>
+   <div class="art"><div class="sun"></div><div class="road"></div><div class="van"><div class="body"></div><div class="cab"></div><div class="win"></div><div class="stripe">haulo</div><div class="wh" style="left:40px"></div><div class="wh" style="left:300px"></div></div></div></div>
+ <div class="feat"><div><i></i><b>Pickup in 60 minutes</b><span>A rider is on the way before you've finished packing.</span></div><div><i></i><b>Live tracking</b><span>Watch every parcel move, and share the link with your customer.</span></div><div><i></i><b>Proof of delivery</b><span>Photo and signature on every drop, saved to your account.</span></div></div>
+ <div class="band"><h2>Sending every day?<br>Open a business account.</h2><span class="go">Talk to sales</span></div>
+</div></div></template>
+<template id="appT"><div class="app"><div class="map"><svg viewBox="0 0 390 544"><g stroke="#fff" stroke-width="14" fill="none" stroke-linecap="round"><path d="M-10 120 L400 90"/><path d="M-10 330 L400 380"/><path d="M90 -10 L120 560"/><path d="M280 -10 L250 560"/><path d="M-10 470 L400 440"/></g>
+ <path class="rt" d="M70 470 L110 330 L265 360 L272 210 L300 110" fill="none" stroke="#2747d6" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+ <circle cx="300" cy="110" r="11" fill="#ffd23f" stroke="#0d1226" stroke-width="4"/><g class="vanpt"><circle r="15" fill="#2747d6"/><circle r="6" fill="#fff"/></g></svg></div>
+ <div class="apphead"><span class="logo">haulo<i></i></span><span class="pill">HL-20419</span></div>
+ <div class="sheet"><div class="eta">Arriving in<b><span class="min">12</span> min</b></div>
+  <div class="cour"><span class="av">TA</span><div><b>Tunde A.</b><div style="font-size:14px;color:#8a90a6">Your Haulo rider · White van</div></div></div>
+  <div class="steps"><i class="on"></i><i class="s2"></i><i class="s3"></i></div><div class="stepl"><span>Picked up</span><span>On the way</span><span>Delivered</span></div></div></div></template>
+<div class="layer" id="L1"><div class="browser"><div class="bar"><i></i><i></i><i></i><em>haulo.ng</em></div><div class="vp" id="vp1"></div></div>
+ <svg class="cursor" id="cur" viewBox="0 0 24 24"><path d="M4 2l15 9-7 1.5L8.5 20z" fill="#000" stroke="#fff" stroke-width="1.5"/></svg></div>
+<div class="layer" id="L2"><div class="photo" id="lp"><img src="laptop-hole.webp" width="2496" height="1664"></div><span class="cap">Website, on a real desk</span></div>
+<div class="layer" id="L3" style="background:#0d1226"><div class="phoneframe" id="pf" style="left:220px;top:8px"><div class="scr" id="scr"></div></div>
+ <div class="side"><h2>Track every<br>step.</h2><p>The Haulo app: live route, rider details and arrival time, designed to be read at a glance.</p></div></div>
+<div class="layer" id="L4"><div class="photo" id="cp"><img src="courier-hole.webp" width="1776" height="2368"></div><span class="cap">App, in the rider's hand</span></div>
+<div class="layer" id="L5"><div class="endc"><div><b>haulo</b><span>Website and app · Studio concept by nka.studio</span></div></div></div>
+<script>
+const st=document.getElementById('siteT').content.firstElementChild, at=document.getElementById('appT').content.firstElementChild;
+const s1=st.cloneNode(true); document.getElementById('vp1').appendChild(s1);
+const s2=st.cloneNode(true); const lp=document.getElementById('lp'); lp.insertBefore(s2,lp.firstChild);
+s2.style.transformOrigin='0 0'; s2.style.transform=quadMatrix(1600,1000,[[1425,371],[2186,457],[2082,993],[1329,853]]);
+const a1=at.cloneNode(true); document.getElementById('scr').appendChild(a1);
+const a2=at.cloneNode(true); const cp=document.getElementById('cp'); cp.insertBefore(a2,cp.firstChild);
+a2.style.transformOrigin='0 0'; a2.style.transform=quadMatrix(390,844,[[728,972],[1036,960],[1045,1649],[742,1660]]);
+const rl=a1.querySelector('.rt').getTotalLength();
+function site(el,t){
+  const A='Lekki Phase 1, Admiralty Way', B='Yaba, Herbert Macaulay Way';
+  el.querySelector('.a').textContent=A.slice(0,Math.floor(A.length*K.seg(t,.4,1.4)));
+  el.querySelector('.b').textContent=B.slice(0,Math.floor(B.length*K.seg(t,1.5,2.4)));
+  el.querySelector('.ca').style.opacity=t<1.45?1:0; el.querySelector('.cb').style.opacity=(t>1.45&&t<2.45)?1:0;
+  el.querySelector('.quote').style.opacity=K.seg(t,2.8,3.0);
+  el.querySelector('.go').style.background=t>2.65?'#f2c218':'#ffd23f';
+  el.querySelector('.page').style.transform='translateY('+(-400*K.inOutCubic(K.seg(t,3.3,4.6)))+'px)';
+  const v=el.querySelector('.van');v.style.transform='translateX('+(Math.sin(t*2)*4)+'px)';
+}
+function app(el,t){
+  const r=el.querySelector('.rt');const d=K.inOutCubic(K.seg(t,.2,3.4));r.style.strokeDasharray=rl;r.style.strokeDashoffset=rl*(1-d);
+  const p=r.getPointAtLength(rl*d);el.querySelector('.vanpt').setAttribute('transform','translate('+p.x+','+p.y+')');
+  el.querySelector('.min').textContent=Math.max(2,Math.round(12-9*d));
+  el.querySelector('.s2').classList.toggle('on',d>0.15);el.querySelector('.s3').classList.toggle('on',d>0.98);
+}
+const cur=document.getElementById('cur');
+window.frame=function(t){
+  K.show('#L1',t,0,4.4,.3); site(s1,t);
+  const cx=t<2.5?K.lerp(1300,600,K.inOutCubic(K.seg(t,0,.4))):K.lerp(600,520,K.inOutCubic(K.seg(t,2.4,2.7)));const cy=t<2.5?K.lerp(700,520,K.inOutCubic(K.seg(t,0,.4))):K.lerp(520,700,K.inOutCubic(K.seg(t,2.4,2.7)));
+  K.css(cur,{left:cx+'px',top:cy+'px',transform:'scale('+((t>2.65&&t<2.8)?.82:1)+')'});
+  K.show('#L2',t,4.2,7.2,.35); site(s2,2.95+K.seg(t,4.9,7.1)*1.65);
+  const z=1+0.07*K.inOutCubic(K.seg(t,4.2,7.2)); lp.style.transform='translate('+(-260*z)+'px,'+(-40*z)+'px) scale('+(1600/2496*1.16*z)+')';
+  K.show('#L3',t,7.0,10.4,.35); app(a1,t-7.1);
+  K.css('#pf',{transform:'translateY('+(40*(1-K.outCubic(K.seg(t,7,7.7))))+'px)'});
+  K.show('#L4',t,10.2,12.6,.35); app(a2,t-9.0);
+  const z2=1+0.05*K.seg(t,10.2,12.6); cp.style.transform='translate(0px,'+(-640-40*K.seg(t,10.2,12.6))+'px) scale('+(1600/1776*z2)+')';
+  K.show('#L5',t,12.4,14,.3);
+};
+frame(0);
+</script></body></html>

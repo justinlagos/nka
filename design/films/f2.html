@@ -1,0 +1,77 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="node_modules/@fontsource-variable/archivo/wdth.css">
+<link rel="stylesheet" href="node_modules/@fontsource-variable/inter-tight/wght.css">
+<script src="lib.js"></script><script src="homog.js"></script>
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1600px;height:900px;overflow:hidden;background:#111;font-family:"Archivo Variable",sans-serif}
+.layer{position:absolute;inset:0;overflow:hidden}
+.kv{position:absolute;left:0;top:0;width:1600px;height:800px;background:#121212;overflow:hidden;color:#ff5b1f}
+.kv .w{position:absolute;left:80px;font-weight:900;font-size:250px;line-height:.8;letter-spacing:-.01em;white-space:nowrap}
+.kv .w1{top:70px}.kv .w2{top:290px}.kv .w3{top:510px}
+.kv svg{position:absolute;right:70px;top:90px;width:520px;height:620px}
+.kv .stat{position:absolute;right:90px;color:#f4f1ea;font-family:"Inter Tight Variable";font-weight:600;font-size:30px;text-align:right}
+.kv .stat small{display:block;font-size:17px;color:#9b9b9b;font-weight:500}
+.kv .s1{top:110px}.kv .s2{top:210px}
+.kv .mark{position:absolute;right:86px;bottom:60px;color:#f4f1ea;font-weight:800;font-size:46px;letter-spacing:.2em;font-variation-settings:"wdth" 125}
+.photo{position:absolute;left:0;top:0;transform-origin:0 0}
+.photo img.hole{position:absolute;left:0;top:0;display:block}
+.photo .kv{transform-origin:0 0}
+.still{position:absolute;inset:0;background:center/cover no-repeat}
+.cap{position:absolute;left:56px;bottom:46px;color:#fff;font-family:"Inter Tight Variable";font-weight:600;font-size:22px;padding:10px 18px;border-radius:999px;background:rgba(0,0,0,.45);backdrop-filter:blur(6px)}
+.phones{position:absolute;inset:0;background:#ece8df;display:flex;gap:46px;align-items:center;justify-content:center}
+.ph{border-radius:38px;background:#121212;overflow:hidden;position:relative;box-shadow:0 30px 60px rgba(0,0,0,.25);border:10px solid #1b1b1b}
+.ph .t{position:absolute;left:28px;font-weight:900;color:#ff5b1f;line-height:.82}
+.ph .m{position:absolute;right:22px;bottom:22px;color:#f4f1ea;font-weight:800;letter-spacing:.2em;font-size:18px;font-variation-settings:"wdth" 125}
+.endc{position:absolute;left:0;right:0;bottom:60px;text-align:center;font-family:"Inter Tight Variable";color:#111;font-size:22px;font-weight:600}
+.endc b{font-family:"Archivo Variable";font-weight:900;font-size:40px;letter-spacing:.14em;font-variation-settings:"wdth" 125;display:block;margin-bottom:6px}
+</style></head><body>
+<template id="kvT"><div class="kv"><div class="w w1">RUN</div><div class="w w2">YOUR</div><div class="w w3">CITY.</div>
+<svg viewBox="0 0 520 620"><path class="route" d="M40 560 C 90 470, 60 400, 140 360 S 260 330, 250 250 S 180 150, 260 110 S 420 120, 440 60" fill="none" stroke="#ff5b1f" stroke-width="10" stroke-linecap="round"/><circle class="dot" r="16" fill="#f4f1ea"/></svg>
+<div class="stat s1"><span class="pace">5:12</span> /km<small>Pace</small></div><div class="stat s2"><span class="dist">0.0</span> km<small>Distance</small></div><div class="mark">RUNA</div></div></template>
+<div class="layer" id="L1"></div>
+<div class="layer" id="L2"><div class="photo" id="bb"><img class="hole" src="billboard-hole.webp" width="2816" height="1584"></div><span class="cap">Digital billboard, London</span></div>
+<div class="layer" id="L3"><div class="still" id="st3" style="background-image:url(../../public/gallery/motion.webp)"></div><span class="cap">Station screens</span></div>
+<div class="layer" id="L4"><div class="still" id="st4" style="background-image:url(../../public/gallery/runa.webp)"></div><span class="cap">Street posters</span></div>
+<div class="layer" id="L5"><div class="phones">
+  <div class="ph" id="p1" style="width:300px;height:620px"><div class="t" style="top:56px;font-size:70px">RUN<br>YOUR<br>CITY.</div><div class="m">RUNA</div></div>
+  <div class="ph" id="p2" style="width:400px;height:400px;border-radius:24px"><div class="t" style="top:40px;font-size:66px">10 KM<br>BEFORE<br>WORK.</div><div class="m">RUNA</div></div>
+  <div class="ph" id="p3" style="width:340px;height:425px;border-radius:24px"><div class="t" style="top:40px;font-size:60px">THE CITY<br>IS YOUR<br>TRACK.</div><div class="m">RUNA</div></div>
+</div><div class="endc"><b>RUNA</b>City campaign · Studio concept by nka.studio</div></div>
+<script>
+const T=document.getElementById('kvT');
+const full=T.content.firstElementChild.cloneNode(true); full.style.top='50px'; document.getElementById('L1').appendChild(full);
+const bbKv=T.content.firstElementChild.cloneNode(true); const bb=document.getElementById('bb'); bb.insertBefore(bbKv,bb.firstChild);
+bbKv.style.transform=quadMatrix(1600,800,[[777,234],[1852,535],[1862,995],[764,893]]);
+const L1=document.getElementById('L1'); L1.style.background='#121212';
+const path=[...document.querySelectorAll('.route')]; const len=path[0].getTotalLength();
+function kv(el,t){
+  const ws=el.querySelectorAll('.w');
+  ws.forEach((w,i)=>{const a=0.15+i*0.32;const p=K.outQuint(K.seg(t,a,a+0.7));
+    w.style.fontVariationSettings='"wdth" '+(62+50*p);w.style.transform='translateX('+(-120*(1-p))+'px)';w.style.opacity=K.seg(t,a,a+0.12);});
+  const r=el.querySelector('.route');const d=K.inOutCubic(K.seg(t,0.6,3.2));
+  r.style.strokeDasharray=len;r.style.strokeDashoffset=len*(1-d);
+  const pt=r.getPointAtLength(len*d);const dot=el.querySelector('.dot');dot.setAttribute('cx',pt.x);dot.setAttribute('cy',pt.y);dot.style.opacity=d>0?1:0;
+  el.querySelector('.dist').textContent=(10*d).toFixed(1);
+  const pace=5*60+12-Math.round(14*d);el.querySelector('.pace').textContent=Math.floor(pace/60)+':'+String(pace%60).padStart(2,'0');
+  el.querySelectorAll('.stat,.mark').forEach(s=>s.style.opacity=K.seg(t,1.0,1.4));
+}
+window.frame=function(t){
+  // 1: full key visual 0-3.4
+  K.show('#L1',t,0,3.5,.3); kv(full,t);
+  // 2: billboard 3.2-6.8, content restarts
+  const v2=K.show('#L2',t,3.2,6.8,.35);
+  const z=1+0.06*K.inOutCubic(K.seg(t,3.2,6.8));const sc=1600/2816*1.08*z;
+  bb.style.transform='translate('+(-1600*0.04*z - 90*K.seg(t,3.2,6.8))+'px,'+(-900*0.08)+'px) scale('+sc+')';
+  kv(bbKv,t-3.0);
+  // 3: station 6.6-9.2
+  K.show('#L3',t,6.6,9.2,.35);K.css('#st3',{transform:'scale('+(1.02+0.06*K.seg(t,6.6,9.2))+')'});
+  // 4: posters 9.0-11.6
+  K.show('#L4',t,9.0,11.6,.35);K.css('#st4',{transform:'scale('+(1.08-0.06*K.seg(t,9,11.6))+') translateX('+(20*K.seg(t,9,11.6))+'px)'});
+  // 5: social formats 11.4-14
+  K.show('#L5',t,11.4,14.4,.35);
+  ['#p1','#p2','#p3'].forEach((id,i)=>{const p=K.outBack(K.seg(t,11.5+i*.15,12.1+i*.15));K.css(id,{transform:'translateY('+(60*(1-p))+'px)',opacity:K.seg(t,11.5+i*.15,11.7+i*.15)});
+    document.querySelectorAll(id+' .t').forEach(x=>x.style.fontVariationSettings='"wdth" '+(62+40*K.outQuint(K.seg(t,11.8+i*.2,12.6+i*.2))));});
+};
+frame(0);
+</script></body></html>

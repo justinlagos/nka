@@ -1,0 +1,191 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="node_modules/@fontsource-variable/inter-tight/wght.css">
+<link rel="stylesheet" href="node_modules/@fontsource-variable/fraunces/index.css">
+<script src="lib.js"></script>
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1600px;height:900px;overflow:hidden;background:#5f86bf;font-family:"Inter Tight Variable",sans-serif;color:#000}
+.bg{position:absolute;inset:0;background:radial-gradient(80% 70% at 50% 40%,#7c9fd0,#4f77b2)}
+.win{position:absolute;left:100px;top:60px;width:1400px;height:780px;border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 40px 90px rgba(20,32,64,.35)}
+.bar{height:44px;background:#ececf0;display:flex;align-items:center;gap:8px;padding:0 18px}
+.bar i{width:12px;height:12px;border-radius:50%;background:#c9c9d0}
+.bar em{font-style:normal;margin-left:16px;font-size:14px;color:#777;background:#fff;border-radius:8px;padding:5px 14px}
+.app{position:absolute;top:44px;left:0;right:0;bottom:0;display:grid;grid-template-columns:220px 1fr}
+.side{background:#000;color:#fff;padding:22px 16px;display:grid;align-content:start;gap:4px;font-size:16px}
+.side img{width:74px;margin:0 0 26px 8px}
+.side span{padding:10px 12px;border-radius:9px;color:#9b9b9b}
+.side span.on{background:#222;color:#fff}
+.main{position:relative;background:#f6f6f6}
+.scene{position:absolute;inset:0;padding:40px 48px;overflow:hidden}
+h2{font-size:30px;font-weight:620;letter-spacing:-.02em}
+.muted{color:#6b6b6b}
+/* chat */
+.chat{max-width:780px;margin-top:26px;display:grid;gap:14px}
+.msg{max-width:560px;padding:14px 18px;border-radius:16px;font-size:18px;line-height:1.4;background:#fff;border:1px solid #e4e4e4}
+.msg.you{justify-self:end;background:#000;color:#fff;border:0}
+.chips{display:flex;gap:8px;margin-top:10px}
+.chip{padding:8px 14px;border-radius:999px;border:1.5px solid #000;font-size:15px;font-weight:600;background:#fff}
+.chip.on{background:#000;color:#fff}
+.input{position:absolute;left:48px;right:48px;bottom:36px;height:70px;background:#fff;border:1.5px solid #000;border-radius:16px;display:flex;align-items:center;padding:0 22px;font-size:19px}
+.input .caret{display:inline-block;width:2px;height:24px;background:#000;margin-left:2px;vertical-align:middle}
+.send{margin-left:auto;background:#000;color:#fff;border-radius:11px;padding:10px 18px;font-size:16px;font-weight:600}
+.card{margin-top:6px;background:#fff;border:1.5px solid #000;border-radius:18px;padding:24px 26px;max-width:780px}
+.card .eyebrow{font-size:14px;font-weight:650;color:#6b6b6b}
+.card h3{font-size:24px;margin:6px 0 8px;letter-spacing:-.015em}
+.card ul{margin:12px 0 18px;padding-left:20px;font-size:16px;line-height:1.6}
+.lanes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.lane{border:1.5px solid #000;border-radius:14px;padding:14px 16px}
+.lane b{display:block;font-size:17px}
+.lane span{font-size:14px;color:#555}
+.lane.hot{background:#000;color:#fff}.lane.hot span{color:#bbb}
+/* project */
+.top{display:flex;justify-content:space-between;align-items:flex-start}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;border:1.5px solid #000;font-size:15px;font-weight:620;background:#fff}
+.pill.dark{background:#000;color:#fff}
+.grid2{display:grid;grid-template-columns:1.25fr 1fr;gap:20px;margin-top:26px}
+.box{background:#fff;border:1px solid #e2e2e2;border-radius:16px;padding:20px 22px}
+.box h4{font-size:14px;color:#6b6b6b;font-weight:650;margin-bottom:12px}
+.who{display:flex;gap:14px;align-items:center;font-size:18px}
+.av{width:52px;height:52px;border-radius:50%;background:#000;color:#fff;display:grid;place-items:center;font-weight:700}
+.sw{display:flex;gap:8px;margin-top:4px}.sw i{width:44px;height:44px;border-radius:10px}
+.tl{display:grid;gap:12px;font-size:16px}
+.tl div{display:flex;gap:12px;align-items:center}.tl b{width:12px;height:12px;border-radius:50%;border:2px solid #000}
+.tl .done b{background:#000}
+/* review */
+.rv{display:grid;grid-template-columns:1fr 360px;gap:22px;margin-top:22px;height:610px}
+.art{position:relative;background:#e9e9ec;border-radius:16px;display:grid;place-items:center;overflow:hidden}
+.ad{width:390px;height:488px;background:#1f2a6b;border-radius:6px;overflow:hidden;position:relative;color:#f4ead6;box-shadow:0 20px 40px rgba(0,0,0,.18)}
+.ad img{position:absolute;left:0;top:0;width:100%;height:68%;object-fit:cover}
+.ad .t{position:absolute;left:26px;right:26px;bottom:28px}
+.ad .t b{display:block;font-family:"Fraunces Variable",serif;font-size:40px;line-height:1;font-weight:600;letter-spacing:-.02em}
+.ad .t small{display:flex;justify-content:space-between;margin-top:12px;font-size:14px;font-weight:600;color:#e7b54a}
+.ad .price{position:absolute;right:20px;top:20px;background:#e7b54a;color:#1f2a6b;border-radius:999px;padding:8px 14px;font-weight:800;font-size:15px}
+.pin{position:absolute;width:34px;height:34px;border-radius:50%;background:#000;color:#fff;display:grid;place-items:center;font-weight:700;box-shadow:0 0 0 4px #fff;font-size:15px}
+.thread{display:grid;align-content:start;gap:12px}
+.vtab{display:flex;gap:8px}.vtab span{padding:6px 12px;border-radius:8px;font-size:14px;font-weight:650;border:1.5px solid #000}.vtab .on{background:#000;color:#fff}
+.btns{display:flex;gap:10px;margin-top:8px}
+.btn{padding:12px 20px;border-radius:12px;font-weight:650;font-size:16px;border:1.5px solid #000}
+.btn.ink{background:#000;color:#fff}
+.toast{position:absolute;left:50%;top:26px;transform:translateX(-50%);background:#000;color:#fff;border-radius:999px;padding:12px 22px;font-weight:650;font-size:16px}
+/* library */
+.lib{display:flex;gap:18px;align-items:flex-end;margin-top:34px}
+.lib figure{display:grid;gap:8px;font-size:14px;font-weight:620;color:#444}
+.lib .th{background:#1f2a6b;border-radius:8px;overflow:hidden;position:relative}
+.lib .th img{width:100%;height:62%;object-fit:cover;display:block}
+.lib .th i{position:absolute;left:10%;bottom:10%;right:10%;height:12%;background:#f4ead6;border-radius:3px;opacity:.9}
+.cursor{position:absolute;width:28px;height:28px;z-index:50;pointer-events:none;filter:drop-shadow(0 3px 4px rgba(0,0,0,.3))}
+.end{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#fff}
+.end h1{font-family:"Inter Tight Variable";font-size:78px;font-weight:600;letter-spacing:-.03em;line-height:1.05}
+.end p{font-size:22px;margin-top:16px;opacity:.85}
+</style></head><body>
+<div class="bg"></div>
+<div class="win" id="win">
+  <div class="bar"><i></i><i></i><i></i><em>nka.studio/app</em></div>
+  <div class="app">
+    <aside class="side"><img src="../../public/brand/signature-white.png"><span class="on" id="nav-p">Projects</span><span id="nav-l">Library</span><span>Brand book</span><span>Team</span></aside>
+    <div class="main">
+      <!-- 1 chat -->
+      <div class="scene" id="s1">
+        <h2>New brief</h2><p class="muted" style="font-size:17px;margin-top:6px">Say what you need. Two quick questions at most.</p>
+        <div class="chat">
+          <div class="msg" id="m0">What do you need designed? Say it how you'd say it to a colleague.</div>
+          <div class="msg you" id="m1">Social ads for our Christmas gift boxes, all the sizes, by 12 December</div>
+          <div class="msg" id="m2">Got it. Should the price be on the ads?<div class="chips"><span class="chip" id="c1">Yes, from £18</span><span class="chip">No price</span></div></div>
+          <div class="msg you" id="m3">Yes, from £18</div>
+          <div class="card" id="card"><div class="eyebrow">Your brief is ready</div><h3>Koko Bloc Christmas gift boxes: paid social</h3>
+            <p class="muted" style="font-size:16px">Launch ads for the Christmas gift box range, price from £18, in your brand colours and type.</p>
+            <ul><li>Feed 1:1 and 4:5, story 9:16, landscape 16:9, link ad 1.91:1, pin 2:3</li><li>Due 12 December</li></ul>
+            <div class="lanes"><div class="lane"><b>Make it now with AI</b><span>Three options in about a minute, in your brand.</span></div><div class="lane" id="lane2"><b>Send to my designer</b><span>You'll see a delivery date straight away.</span></div></div>
+          </div>
+        </div>
+        <div class="input" id="inp"><span id="typed"></span><span class="caret" id="caret"></span><span class="send">Send</span></div>
+      </div>
+      <!-- 2 project -->
+      <div class="scene" id="s2">
+        <div class="top"><div><p class="muted" style="font-size:15px;font-weight:650">NKA-1052</p><h2>Koko Bloc Christmas gift boxes</h2></div><span class="pill" id="st">Sent to your designer</span></div>
+        <div class="grid2">
+          <div class="box"><h4>Your designer</h4><div class="who"><span class="av">AO</span><div><b>Your named lead designer</b><p class="muted" style="font-size:15px">Knows your brand. Leads every brief.</p></div></div>
+            <h4 style="margin-top:24px">Expected</h4><div style="display:flex;gap:10px;align-items:center"><span class="pill dark" id="date">First draft Thu 4 Dec</span><span class="pill">On time</span></div></div>
+          <div class="box"><h4>Brand book, read from your website</h4><div class="sw"><i style="background:#1f2a6b"></i><i style="background:#e7b54a"></i><i style="background:#c8553d"></i><i style="background:#f4ead6;border:1px solid #ddd"></i></div>
+            <p style="margin-top:16px;font-size:16px"><b>Fraunces</b> for headlines, <b>Inter</b> for text</p><p class="muted" style="font-size:15px;margin-top:6px">Tone: warm, proud, a little playful</p></div>
+        </div>
+        <div class="box" style="margin-top:20px"><h4>Progress</h4><div class="tl"><div class="done" id="p1"><b></b>Brief written</div><div class="done" id="p2"><b></b>Designer started</div><div id="p3"><b></b>First draft ready for review</div><div id="p4"><b></b>Approved, files in your library</div></div></div>
+      </div>
+      <!-- 3 review -->
+      <div class="scene" id="s3">
+        <div class="top"><div><p class="muted" style="font-size:15px;font-weight:650">NKA-1052</p><h2>Review: feed 4:5</h2></div><div class="vtab"><span id="v1" class="on">Version 1</span><span id="v2">Version 2</span></div></div>
+        <div class="rv">
+          <div class="art"><div class="ad" id="ad"><img src="../../public/gallery/choco.webp"><span class="price" id="price">From £18</span><div class="t"><b>Gift something good.</b><small><span>KOKO BLOC</span><span>Christmas boxes</span></small></div></div>
+            <span class="pin" id="pin1" style="left:calc(50% + 110px);top:120px">1</span></div>
+          <div class="thread">
+            <div class="msg" id="r1" style="font-size:16px"><b style="display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#000;color:#fff;font-size:12px;margin-right:6px">1</b>Can the price be a bit bigger?</div>
+            <div class="msg you" id="r2" style="font-size:16px">Done. Version 2 is up.</div>
+            <div class="btns" id="btns"><span class="btn ink" id="approve">Approve</span><span class="btn">Ask for changes</span></div>
+          </div>
+        </div>
+        <div class="toast" id="toast">Approved. Your designer is making the other five sizes.</div>
+      </div>
+      <!-- 4 library -->
+      <div class="scene" id="s4">
+        <div class="top"><div><h2>Library</h2><p class="muted" style="font-size:17px;margin-top:6px">Koko Bloc Christmas gift boxes · 6 sizes</p></div><span class="pill dark">Download all</span></div>
+        <div class="lib" id="lib"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="end" id="end"><div><h1>From a sentence to finished files.</h1><p>Every brief, date, comment and file in one workspace.</p></div></div>
+<svg class="cursor" id="cur" viewBox="0 0 24 24"><path d="M4 2l15 9-7 1.5L8.5 20z" fill="#000" stroke="#fff" stroke-width="1.5"/></svg>
+<script>
+const sizes=[['1:1',140,140],['4:5',140,175],['9:16',118,210],['16:9',228,128],['1.91:1',228,119],['2:3',134,201]];
+const lib=K.$('#lib');
+sizes.forEach(([n,w,h],i)=>{lib.insertAdjacentHTML('beforeend',`<figure id="lb${i}"><div class="th" style="width:${w}px;height:${h}px"><img src="../../public/gallery/choco.webp"><i></i></div>${n}</figure>`)});
+const text='Social ads for our Christmas gift boxes, all the sizes, by 12 December';
+const cur=K.$('#cur');
+function curAt(x,y,press){K.css(cur,{left:x+'px',top:y+'px',transform:`scale(${press?0.82:1})`})}
+function path(t,pts){ // pts: [t,x,y]
+  for(let i=0;i<pts.length-1;i++){const [a,x0,y0]=pts[i],[b,x1,y1]=pts[i+1];if(t<=b){const e=K.inOutCubic(K.seg(t,a,b));return [K.lerp(x0,x1,e),K.lerp(y0,y1,e)]}}
+  const l=pts[pts.length-1];return [l[1],l[2]];
+}
+window.frame=function(t){
+  const T=t;
+  K.css('#win',{transform:`translateY(${(1-K.outCubic(K.seg(T,0,.6)))*24}px) scale(${1-0.04*K.inOutCubic(K.seg(T,15.2,16))})`});
+  // scene 1
+  K.show('#s1',T,0,6.4,.3);
+  const n=Math.floor(text.length*K.seg(T,.7,2.6));
+  K.$('#typed').textContent=T<2.75?text.slice(0,n):'';
+  K.css('#caret',{opacity:(Math.floor(T*2.5)%2&&T<2.75)?1:0.2});
+  const pop=(id,a)=>{const v=K.outCubic(K.seg(T,a,a+.35));K.css(id,{opacity:v,transform:`translateY(${(1-v)*14}px)`,display:T>=a?'':'none'})};
+  pop('#m0',0.2);pop('#m1',2.8);pop('#m2',3.4);pop('#m3',4.55);pop('#card',4.9);
+  K.$('#c1').classList.toggle('on',T>4.3);
+  // chat scrolls up as the card arrives
+  const sc=K.inOutCubic(K.seg(T,4.9,5.5));K.css('.chat',{transform:`translateY(${-200*sc}px)`});K.css('#s1 h2',{opacity:1-sc});K.css('#s1 h2 + p',{opacity:1-sc});
+  K.css('#inp',{opacity:1-K.seg(T,4.9,5.2)});
+  K.$('#lane2').classList.toggle('hot',T>6.0);
+  // scene 2
+  K.show('#s2',T,6.4,9.0,.3);
+  K.css('#st',{background:T>7.4?'#000':'#fff',color:T>7.4?'#fff':'#000'});
+  K.$('#st').textContent=T>7.4?'In progress':'Sent to your designer';
+  const dv=K.outBack(K.seg(T,6.9,7.4));K.css('#date',{transform:`scale(${0.6+0.4*dv})`,opacity:K.seg(T,6.9,7.1)});
+  K.$('#p3').classList.toggle('done',T>8.4);
+  // scene 3
+  K.show('#s3',T,9.0,12.9,.3);
+  const pinv=K.outBack(K.seg(T,9.6,10));K.css('#pin1',{transform:`scale(${pinv})`,opacity:K.seg(T,9.6,9.7)});
+  pop('#r1',9.8);pop('#r2',10.9);
+  const v2=T>10.9; K.$('#v1').classList.toggle('on',!v2); K.$('#v2').classList.toggle('on',v2);
+  K.css('#price',{transform:`scale(${v2?1+0.35*K.outBack(K.seg(T,10.9,11.3)):1})`,transformOrigin:'100% 0'});
+  K.css('#pin1',{display:v2&&T>11.2?'none':''});
+  K.css('#approve',{background:T>11.9?'#2b2b2b':'#000'});
+  const tv=K.clamp(Math.min((T-12.0)/.25,(12.85-T)/.25));K.css('#toast',{opacity:tv,transform:`translateX(-50%) translateY(${(1-tv)*-10}px)`});
+  // scene 4
+  K.show('#s4',T,12.9,16.2,.3);
+  K.$('#nav-p').classList.toggle('on',T<12.9);K.$('#nav-l').classList.toggle('on',T>=12.9);
+  sizes.forEach((s,i)=>{const v=K.outCubic(K.seg(T,13.1+i*.16,13.6+i*.16));K.css('#lb'+i,{opacity:v,transform:`translateY(${(1-v)*30}px)`})});
+  // end card
+  const ev=K.seg(T,15.5,16.1);K.css('#end',{opacity:ev}); K.css('#win',{filter:`blur(${ev*8}px)`,opacity:K.seg(T,0,.5)*(1-ev*0.85)});
+  // cursor: winX=100, winY=60(+44 bar); main starts x=320
+  const [cx,cy]=path(T,[[0,1300,700],[3.6,1300,700],[4.2,452,466],[5.8,452,466],[6.3,950,606],[9.0,950,606],[11.3,1000,700],[11.8,1150,386],[13,1150,386],[14.5,1320,170]]);
+  curAt(cx,cy,(T>4.2&&T<4.35)||(T>5.95&&T<6.1)||(T>11.85&&T<12.0));
+  K.css(cur,{opacity:T<15.4?1:0});
+};
+frame(0);
+</script></body></html>

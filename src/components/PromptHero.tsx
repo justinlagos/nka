@@ -13,7 +13,7 @@ const EXAMPLES = [
 ];
 
 // The hero is the product: say what you need, and the demo starts with it.
-export function PromptHero() {
+export function PromptHero({ id = "need", label = "Start a project" }: { id?: string; label?: string }) {
   const router = useRouter();
   const [value, setValue] = useState("");
   const [shown, setShown] = useState(EXAMPLES[0]);
@@ -61,11 +61,11 @@ export function PromptHero() {
         router.push(need ? `/demo?need=${encodeURIComponent(need)}` : "/demo");
       }}
     >
-      <label className="skip" htmlFor="need">
+      <label className="skip" htmlFor={id}>
         What do you need designed?
       </label>
       <input
-        id="need"
+        id={id}
         className="prompt-input"
         value={value}
         maxLength={300}
@@ -76,7 +76,7 @@ export function PromptHero() {
         onChange={(e) => setValue(e.target.value)}
       />
       <button type="submit" className="btn">
-        Start with this
+        {label}
       </button>
     </form>
   );
