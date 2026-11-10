@@ -101,6 +101,15 @@ export async function ProjectScreen({ id, sent, mode }: { id: string; sent?: str
     ...(source ? [source.storage_path] : []),
   ]);
   const who = await people(supabase, [...comments.map((c) => c.author), ...events.map((e) => e.actor), p.assignee, p.approved_by]);
+  // The admin sees who each designer really is and the name clients see.
+  const seenAs = new Map<string, string>();
+  if (admin) {
+    const ids = [...new Set(comments.map((c) => c.author))];
+    const { data: rows } = ids.length ? await supabase.from("profiles").select("*").in("id", ids) : { data: [] };
+    for (const r of (rows ?? []) as { id: string; is_talent?: boolean; is_staff?: boolean; alias?: string }[]) {
+      if (r.is_talent && !r.is_staff) seenAs.set(r.id, r.alias || "Your designer");
+    }
+  }
 
   // Latest version of each titled file first; older ones listed under it.
   const groups = new Map<string, Deliverable[]>();
@@ -119,6 +128,13 @@ export async function ProjectScreen({ id, sent, mode }: { id: string; sent?: str
       body: c.body,
       authorName: displayName(person),
       authorStaff: Boolean(person?.is_staff),
+      authorTag: !admin
+        ? undefined
+        : seenAs.has(c.author)
+          ? ` (designer, clients see "${seenAs.get(c.author)}")`
+          : person?.is_staff
+            ? " (Nka admin)"
+            : " (client)",
       createdAt: c.created_at,
       pinX: c.pin_x,
       pinY: c.pin_y,
@@ -179,8 +195,9 @@ export async function ProjectScreen({ id, sent, mode }: { id: string; sent?: str
       {instantFailed && !["completed", "cancelled"].includes(status) && (
         <div className="callout">
           <p>
-            Instant couldn&apos;t make options this time, so this brief has gone to your designer instead. It didn&apos;t use
-            one of your Instant briefs.
+            {admin
+              ? "Instant couldn't make options, so this brief went to the designer. It didn't use an Instant credit."
+              : "Instant couldn't make options this time, so this brief has gone to your designer instead. It didn't use one of your Instant briefs."}
           </p>
         </div>
       )}
@@ -201,12 +218,18 @@ export async function ProjectScreen({ id, sent, mode }: { id: string; sent?: str
         <div className="expected">
           <span className="expected-label">Expected first draft</span>
           <b>{date(p.suggested_due)}</b>
-          <span className="small muted">Nka&apos;s estimate from your brief. Your designer confirms it.</span>
+          <span className="small muted">
+            {admin ? "Nka's estimate from the brief. The designer confirms it." : "Nka's estimate from your brief. Your designer confirms it."}
+          </span>
         </div>
       )}
       {isResize && !sent && (
         <div className="callout">
-          <p>Free resize. It doesn&apos;t use one of your plan&apos;s request slots or any Flex budget.</p>
+          <p>
+            {admin
+              ? "Free resize. It doesn't use a plan slot or any Flex budget."
+              : "Free resize. It doesn't use one of your plan's request slots or any Flex budget."}
+          </p>
         </div>
       )}
       {sent === "resize" && (
@@ -228,7 +251,13 @@ export async function ProjectScreen({ id, sent, mode }: { id: string; sent?: str
       <div className="grid-main">
         <div>
           <div className="callout">
-            <p>{STATUS[status]?.client}</p>
+            <p>
+              {!admin
+                ? STATUS[status]?.client
+                : status === "submitted" && p.estimate_due && !p.estimate_sent_at
+                  ? `The designer proposed ${date(p.estimate_due)}. Add the price under Studio controls and send it.`
+                  : STATUS[status]?.admin}
+            </p>
           </div>
 
           {(status === "awaiting_approval" || (p.estimate_sent_at && showMoney)) && (
@@ -295,11 +324,11 @@ export async function ProjectScreen({ id, sent, mode }: { id: string; sent?: str
           )}
 
           <section className="panel">
-            <h2>Files from the studio</h2>
+            <h2>{admin ? "Files" : "Files from the studio"}</h2>
             {fileGroups.length === 0 ? (
               <div className="empty">
                 <strong>No files yet.</strong>
-                Drafts appear here for review as soon as they&apos;re ready.
+                {admin ? "The designer's drafts appear here." : "Drafts appear here for review as soon as they're ready."}
               </div>
             ) : (
               <div className="files">
@@ -414,7 +443,7 @@ export async function ProjectScreen({ id, sent, mode }: { id: string; sent?: str
                       <div>
                         <div className="comment-meta">
                           <b>{r.authorName}</b>
-                          {r.authorStaff ? " (Nka)" : ""}, {dateTime(r.createdAt)}
+                          {r.authorTag ?? (r.authorStaff ? " (Nka)" : "")}, {dateTime(r.createdAt)}
                         </div>
                         <p className="comment-body">{r.body}</p>
                       </div>

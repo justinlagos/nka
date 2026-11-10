@@ -141,6 +141,8 @@ Rules:
 - Keep the client's own copy word for word in "messages".
 - "deliverables" is one line per item: item, format, size, quantity. Suggest standard sizes for the channels they name.
 - Plain English, short sentences. British spelling.
+- Never ask for phone numbers, email addresses or social media handles. Nka doesn't allow them in messages between
+  client and designer. If a call to action needs a destination, ask for the web address.
 Reply with one JSON object and nothing else, with these string fields:
 title (under 60 characters), service (one of: brand-identity, event-branding, reports-documents, presentations, social-ads, motion-video, web-product, print-merch, or ""), summary, objective, audience, deliverables, messages, mandatories, references, tone, questions.`;
 

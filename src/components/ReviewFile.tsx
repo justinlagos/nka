@@ -10,6 +10,8 @@ export type ReviewComment = {
   body: string;
   authorName: string;
   authorStaff: boolean;
+  // Overrides the " (Nka)" note after the name, e.g. on the admin screen.
+  authorTag?: string;
   createdAt: string;
   pinX: number | null;
   pinY: number | null;
@@ -169,7 +171,7 @@ export function ReviewFile({
                   <div>
                     <div className="comment-meta">
                       <b>{c.authorName}</b>
-                      {c.authorStaff ? " (Nka)" : ""}, {dateTime(c.createdAt)}
+                      {c.authorTag ?? (c.authorStaff ? " (Nka)" : "")}, {dateTime(c.createdAt)}
                       {n >= 0 ? `, pin ${n + 1}` : ""}
                     </div>
                     <p className="comment-body">{c.body}</p>

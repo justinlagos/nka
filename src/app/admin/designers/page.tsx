@@ -112,8 +112,12 @@ export default async function Designers() {
                   <tr key={d.id} className={d.talent_active ? "" : "muted"}>
                     <td>
                       {d.full_name || d.email}
-                      <br />
-                      <span className="small muted">{d.email}</span>
+                      {d.full_name && (
+                        <>
+                          <br />
+                          <span className="small muted">{d.email}</span>
+                        </>
+                      )}
                       {!d.talent_active && <span className="small"> (paused: gets no new clients)</span>}
                     </td>
                     <td>{d.alias || "Your designer"}</td>

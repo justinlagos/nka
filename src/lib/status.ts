@@ -11,24 +11,41 @@ export type ProjectStatus =
 
 export type Tone = "quiet" | "ink" | "ochre" | "laterite" | "leaf";
 
-export const STATUS: Record<ProjectStatus, { label: string; client: string; tone: Tone }> = {
-  draft: { label: "Draft", client: "Only you can see this. Send it when it's ready.", tone: "quiet" },
+export const STATUS: Record<ProjectStatus, { label: string; client: string; admin: string; tone: Tone }> = {
+  draft: { label: "Draft", client: "Only you can see this. Send it when it's ready.", admin: "The client hasn't sent this yet.", tone: "quiet" },
   queued: {
     label: "Queued",
     client: "Your plan's active requests are full. This starts as soon as one finishes.",
+    admin: "Over the client's plan limit. It starts when one of their active projects finishes.",
     tone: "quiet",
   },
-  submitted: { label: "Brief received", client: "The studio is reading your brief and planning the work.", tone: "ink" },
+  submitted: {
+    label: "Brief received",
+    client: "The studio is reading your brief and planning the work.",
+    admin: "Waiting for the designer to confirm or propose a date.",
+    tone: "ink",
+  },
   awaiting_approval: {
     label: "Estimate to approve",
     client: "Check the estimate below. Work starts when an owner or admin approves it.",
+    admin: "Estimate sent. Waiting for the client to approve it.",
     tone: "ochre",
   },
-  in_progress: { label: "In production", client: "Your designer is working on it.", tone: "ink" },
-  in_review: { label: "Ready for review", client: "New files are ready. Approve them or ask for changes.", tone: "ochre" },
-  changes_requested: { label: "Changes requested", client: "The studio is working on your changes.", tone: "laterite" },
-  completed: { label: "Completed", client: "Done. Approved files are in your library.", tone: "leaf" },
-  cancelled: { label: "Cancelled", client: "This project was stopped.", tone: "quiet" },
+  in_progress: { label: "In production", client: "Your designer is working on it.", admin: "With the designer.", tone: "ink" },
+  in_review: {
+    label: "Ready for review",
+    client: "New files are ready. Approve them or ask for changes.",
+    admin: "Files are with the client for review.",
+    tone: "ochre",
+  },
+  changes_requested: {
+    label: "Changes requested",
+    client: "The studio is working on your changes.",
+    admin: "The client asked for changes. The designer is on them.",
+    tone: "laterite",
+  },
+  completed: { label: "Completed", client: "Done. Approved files are in your library.", admin: "Done.", tone: "leaf" },
+  cancelled: { label: "Cancelled", client: "This project was stopped.", admin: "Cancelled.", tone: "quiet" },
 };
 
 // Stages shown as a line on each project. Queued and cancelled sit outside it.
