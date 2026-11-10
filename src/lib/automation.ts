@@ -206,7 +206,7 @@ export async function makeImages(projectId: string, mode: "concepts" | "instant"
         status: "submitted",
         concepts_status: "failed",
         estimate_amount: null,
-        estimate_notes: null,
+        estimate_notes: "",
         estimate_sent_at: null,
         approved_at: null,
         approved_by: null,
