@@ -7,7 +7,7 @@ import { FLEX } from "@/lib/plans";
 const DOCS: Record<string, { title: string; updated: string; body: { h: string; p: string[] }[] }> = {
   terms: {
     title: "Terms of service",
-    updated: "9 November 2026",
+    updated: "10 November 2026",
     body: [
       {
         h: "Who we are",
@@ -51,6 +51,13 @@ const DOCS: Record<string, { title: string; updated: string; body: { h: string; 
         h: "Liability",
         p: [
           "Our total liability under these terms is limited to the fees you paid in the three months before the claim. We are not liable for indirect losses such as lost profit. Nothing here limits liability that the law does not allow to be limited.",
+        ],
+      },
+      {
+        h: "Work and people shown on our website",
+        p: [
+          "The projects on our website are studio concepts: work we made for invented brands to show the range of what we do. None of them is client work, and the brands, people and figures in them are made up.",
+          "People in the photographs and portraits on our website are illustrations. They are not our team, our clients or people who have used Nka.",
         ],
       },
       { h: "Law", p: ["These terms are governed by the law of England and Wales."] },

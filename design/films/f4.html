@@ -53,7 +53,7 @@ img{display:block}
 <div class="layer" id="S1"></div>
 <div class="layer" id="S2"><div class="set"><div class="arch"></div></div></div>
 <div class="layer" id="S3" style="background:#f6efff"><div class="flab" style="left:0;right:0;top:46px;font-size:26px">One idea, every size</div></div>
-<div class="layer" id="S4"><div class="ph" id="P4"><img class="hole" src="boba/phone-hole.webp" width="2368" height="1776"></div></div>
+<div class="layer" id="S4"><div class="ph" id="P4"><img class="hole" src="boba/phone-hole2.webp" width="2368" height="1776"></div></div>
 <div class="layer" id="S5"><div class="ph" id="P5"><img class="hole" src="boba/shop-hole.webp" width="2368" height="1776"></div></div>
 <div class="layer" id="S6"><div class="endc"><div><img id="endlogo" src="boba/logo.webp" style="width:520px;margin:0 auto"><span>Motion and social campaign · Studio concept by nka.studio</span></div></div></div>
 <div class="layer" id="iris" style="pointer-events:none"></div>
@@ -172,7 +172,7 @@ const fm=F.map((f,i)=>{const st=story('new',f.w,f.h,{bare:true,layout:LAY[i]});s
 
 // ---- Scenes 4 and 5: on a phone in a café, and on the shop's menu screen
 const P4=document.getElementById('P4'), P5=document.getElementById('P5');
-const s4=story('new',450,1069); P4.insertBefore(s4,P4.firstChild); s4.style.transformOrigin='0 0'; s4.style.transform=quadMatrix(450,1069,[[816,599],[1178,599],[1178,1459],[816,1459]]);
+const s4=story('new',450,1000); P4.insertBefore(s4,P4.firstChild); s4.style.transformOrigin='0 0'; s4.style.transform=quadMatrix(450,1000,[[441.7,543.1],[840.3,556.5],[968.0,1404.2],[561.4,1459.2]]);
 const s5=story('late',500,820,{bare:true}); P5.insertBefore(s5,P5.firstChild); s5.style.transformOrigin='0 0'; s5.style.transform=quadMatrix(500,820,[[1705,167],[2205,92],[2215,985],[1712,985]]);
 
 const iris=document.getElementById('iris');
@@ -192,9 +192,9 @@ window.frame=function(t){
   K.show('#S3',t,7.45,10.0,.3);
   fm.forEach((f,i)=>{const a=7.55+i*.14;const e=K.seg(t,a,a+.5);const b=e<1?K.outBack(e):1;f.st.style.transform=`translateY(${(1-b)*60}px) scale(${.85+.15*b})`;f.st.style.opacity=K.seg(t,a,a+.1);f.lab.style.opacity=K.seg(t,a+.3,a+.6);anim(f.st,t-a-.1);});
   // 4: café 9.8-12.4
-  K.show('#S4',t,9.8,12.4,.35); {const z=1+.05*K.seg(t,9.8,12.4),sc=1600/2368*1.0*z;P4.style.transform=`translate(${800-1184*sc}px,${450-1000*sc}px) scale(${sc})`;} anim(s4,t-10.0);
+  K.show('#S4',t,9.8,12.4,.35); {const z=1+.05*K.seg(t,9.8,12.4),sc=1600/2368*1.0*z;P4.style.transform=`translate(${800-1184*sc}px,${450-1030*sc}px) scale(${sc})`;} anim(s4,t-10.0);
   // 5: shop 12.2-14.6
-  K.show('#S5',t,12.2,14.6,.35); {const z=1+.05*K.seg(t,12.2,14.6),sc=1600/2368*1.0*z;P5.style.transform=`translate(${800-1184*sc}px,${450-640*sc}px) scale(${sc})`;} anim(s5,t-12.3);
+  K.show('#S5',t,12.2,14.6,.35); {const z=1+.05*K.seg(t,12.2,14.6),sc=1600/1760*z;P5.style.transform=`translate(${800-1488*sc}px,${450-495*sc}px) scale(${sc})`;} anim(s5,t-12.3);
   // end 14.4-15.6
   K.show('#S6',t,14.4,16,.3); {const p=K.seg(t,14.5,15.0);const e=p<1?K.outBack(p):1;K.css('#endlogo',{transform:`scale(${e})`});}
 };

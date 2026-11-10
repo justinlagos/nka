@@ -143,12 +143,12 @@ export const PROJECTS: Project[] = [
     ask: "Need social posts that move?",
     need: "Animated social posts for our new product, in every size",
     media: [
-      film("boba", "0:16", "Film: Boba Bay launch posts, from the key visual to stories, every size, a phone in a café and the menu screen in the shop"),
+      film("boba", "0:16", "Film: Boba Bay launch posts, from the key visual to stories, every size, a phone on a café table and the menu screen in the shop"),
       still("boba-stories", "Three Boba Bay stories on phones: new flavour, buy one get one, open late"),
       sq("boba", "Three phones showing Boba Bay stories on a pastel stand"),
       still("boba-sizes", "The Mango Passionfruit post in story, square, portrait and feed sizes"),
-      img("boba-cafe", 1800, 1013, "A woman in a café holding up her phone with the Boba Bay story on it"),
-      img("boba-shop", 1800, 1013, "The Boba Bay open late story on the menu screen behind the counter"),
+      img("boba-table", 1800, 1350, "The Boba Bay story on a phone propped on a café table next to two bubble teas"),
+      img("boba-counter", 1800, 1013, "The Boba Bay open late story on the menu screen behind the counter"),
     ],
   },
   {
@@ -187,7 +187,7 @@ export const PROJECTS: Project[] = [
     ask: "Need a restaurant brand like this?",
     need: "Branding for our restaurant: signage, menus and print",
     media: [
-      img("ewa-front", 1800, 1208, "The Ewa restaurant front at dusk on a Lagos street, the window glowing"),
+      img("ewa-window", 1170, 1208, "The Ewa restaurant window at dusk in Lagos, diners inside and a man walking past"),
       tall("restaurant", "Ewa menus, coasters and a matchbox on a wooden table"),
     ],
   },
@@ -196,13 +196,13 @@ export const PROJECTS: Project[] = [
     brand: "Pocketa",
     category: "App launch campaign",
     kind: "concept",
-    summary: "A launch campaign for a savings app: a paid social ad that lands in the feed and a billboard over one of Lagos's busiest roads.",
+    summary: "A launch campaign for a savings app: a paid social ad that lands in the feed and a billboard over a Lagos road at sunset.",
     made: ["Paid social", "Billboard"],
     ask: "Launching an app? We'll make the campaign.",
     need: "A launch campaign for our app: social ads and a billboard",
     media: [
       sq("pocketa", "A Pocketa savings ad on a phone, on lime green"),
-      wide("billboard", "A Pocketa billboard over a busy Lagos road at sunset"),
+      wide("billboard-lagos", "A Pocketa billboard over a Lagos road at sunset"),
     ],
   },
   {

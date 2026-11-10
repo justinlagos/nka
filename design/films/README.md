@@ -40,3 +40,12 @@ Motion reel (`public/films/reel-motion.mp4`, 23.5s): cuts from the films above w
 It is the hero on the Motion and video service page.
 
 `shot.js` takes a plain screenshot of a page: `node shot.js $PWD/page.html out.png 1600 900`.
+
+Lagos billboard (`public/gallery/billboard-lagos.webp`): street shot made with a magenta billboard, then edited to remove a
+motorbike riding against traffic. Nigeria drives on the right in left-hand-drive vehicles: oncoming traffic sits on the left
+of the frame and the danfo driver sits on the bus's left. `pocketa-billboard-art.webp` is the ad, flattened and extended to
+the board's shape; `billboard-lagos-hole.webp` is the photo with the board cut out. Warp the art into the hole (corners
+[392,139] [1106,161] [1106,434] [388,421] in the 2048x1360 photo) with OpenCV and lay the photo on top.
+
+Boba Bay café still: `still-boba-table.js` renders the whole café photo with the story in place.
+`render-range.js` re-renders only part of a film after a fix: `node render-range.js $PWD/f4.html $PWD/f4 9.4 12.8`.

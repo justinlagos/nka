@@ -20,7 +20,7 @@ export const SHOW = {
   pitch: wide("pitch", "A founder presenting a Series A slide to investors in a bright meeting room"),
   restaurant: tall("restaurant", "A Lagos restaurant's menu, coasters and matchbox on a wooden table"),
   books: tall("books", "A series of four paperback covers in bold flat colours on a shelf"),
-  billboard: wide("billboard", "A savings-app billboard over a busy Lagos road at sunset"),
+  billboard: wide("billboard-lagos", "A savings-app billboard over a Lagos road at sunset"),
   merch: tall("merch", "A shopper at a streetwear pop-up wearing the label's t-shirt and tote"),
   signage: wide("signage", "Wayfinding signs and a large painted floor number in an office lobby"),
   motion: wide("runa-station", "A motion ad playing on a tall screen in a London railway station"),
@@ -110,7 +110,7 @@ export const OUTCOMES: { id: string; brand: string; title: string; img: string }
   { id: "northlight", brand: "Northlight Summit", title: "Stage, badges, programme", img: "/gallery/stage.webp" },
   { id: "bright", brand: "Bright Futures Fund", title: "An annual report", img: "/gallery/impact.webp" },
   { id: "koko", brand: "Koko Bloc", title: "Packaging for a range", img: "/gallery/choco.webp" },
-  { id: "ewa", brand: "Ewa", title: "A restaurant brand", img: "/gallery/ewa-front.webp" },
+  { id: "ewa", brand: "Ewa", title: "A restaurant brand", img: "/gallery/ewa-window.webp" },
 ];
 
 // Who does the work. The photos are illustrations, said so on the page.

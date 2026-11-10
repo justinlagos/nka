@@ -151,7 +151,6 @@ export default function Home() {
             </p>
           </div>
           <RolesFlow />
-          <p className="lp-note">People shown are illustrations. Work shown is studio concepts for invented brands.</p>
         </div>
       </section>
 

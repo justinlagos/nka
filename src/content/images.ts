@@ -32,7 +32,7 @@ export const SERVICE_IMG: Record<string, Img> = {
   "event-branding": show("stage", 1800, 1208, "Example event identity on a conference stage screen"),
   "reports-documents": show("report", 1800, 1208, "Example annual report for an education charity"),
   presentations: show("pitch", 1800, 1208, "Example Series A slide presented in a meeting room"),
-  "social-ads": show("billboard", 1800, 1208, "Example savings-app billboard over a Lagos road"),
+  "social-ads": show("billboard-lagos", 1800, 1208, "Example savings-app billboard over a Lagos road"),
   "motion-video": show("runa-station", 1800, 1208, "Example motion ad on a station screen"),
   "web-product": show("website", 1800, 1208, "Example delivery company website on a laptop"),
   "print-merch": show("choco", 1200, 1490, "Example screen-printed chocolate wrappers"),
