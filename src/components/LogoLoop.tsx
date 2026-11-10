@@ -23,8 +23,8 @@ export function LogoLoop({ tone = "dark", className = "" }: { tone?: "dark" | "l
   }
   return (
     <video ref={ref} className={className} muted loop playsInline preload="none" poster={poster} aria-label="nka.studio identity" width={1080} height={1080}>
-      <source src={`/brand/loop-${tone}.webm`} type="video/webm" />
       <source src={`/brand/loop-${tone}.mp4`} type="video/mp4" />
+      <source src={`/brand/loop-${tone}.webm`} type="video/webm" />
     </video>
   );
 }
