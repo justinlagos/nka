@@ -25,15 +25,17 @@ export const IMG = {
   brochure: img("brochure-amara", 1440, 1800, "Example brochure and flyers for a health clinic"),
 };
 
+const show = (name: string, w: number, h: number, alt: string): Img => ({ src: `/show/${name}.webp`, w, h, alt });
+
 export const SERVICE_IMG: Record<string, Img> = {
-  "brand-identity": IMG.identity,
-  "event-branding": IMG.event,
-  "reports-documents": IMG.report,
-  presentations: IMG.deck,
-  "social-ads": IMG.social,
-  "motion-video": IMG.motion,
-  "web-product": IMG.web,
-  "print-merch": IMG.packaging,
+  "brand-identity": show("identity", 1800, 1195, "Example brand identity for an architecture firm: cards, letterhead, notebook and tote"),
+  "event-branding": show("stage", 1800, 1195, "Example event branding on a conference stage"),
+  "reports-documents": show("report", 1200, 1500, "Example annual report for an education charity"),
+  presentations: show("pitch", 1800, 1195, "Example Series A pitch deck on a meeting room screen"),
+  "social-ads": show("social", 1200, 1500, "Example social adverts for a bubble tea brand on three phones"),
+  "motion-video": show("launch", 1800, 1195, "Example 3D motion frame reading Launch Week"),
+  "web-product": show("website", 1800, 1195, "Example website and app for a delivery company"),
+  "print-merch": show("choco", 1200, 1500, "Example chocolate packaging with geometric patterns"),
 };
 
 export const WALL: (Img & { caption: string })[] = [

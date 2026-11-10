@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/Wordmark";
+import { NavLogo } from "@/components/identity/LivingLogo";
 import { MobileMenu } from "@/components/MobileMenu";
 import { NavLinks } from "@/components/NavLinks";
 import { Clocks } from "@/components/Clocks";
@@ -10,7 +11,7 @@ export function SiteHeader({ signedIn }: { signedIn: boolean }) {
     <header className="site-header">
       <div className="wrap site-header-row">
         <Link href="/" className="site-logo" aria-label="nka.studio home">
-          <Wordmark />
+          <NavLogo />
         </Link>
         <NavLinks items={NAV} />
         <div className="site-actions">

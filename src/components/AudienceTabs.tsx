@@ -2,14 +2,14 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { AUDIENCES, LP_IMG } from "@/content/landing";
+import { AUDIENCES, SHOW } from "@/content/landing";
 
 // One panel per kind of customer: what changes for them, in their terms.
 export function AudienceTabs() {
   const [active, setActive] = useState(AUDIENCES[0].id);
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
   const a = AUDIENCES.find((x) => x.id === active) ?? AUDIENCES[0];
-  const img = LP_IMG[a.img];
+  const img = SHOW[a.img];
   const move = (i: number) => {
     const n = (i + AUDIENCES.length) % AUDIENCES.length;
     setActive(AUDIENCES[n].id);
@@ -40,7 +40,7 @@ export function AudienceTabs() {
           </button>
         ))}
       </div>
-      <div className="aud-panel" role="tabpanel" id={`panel-${a.id}`} aria-labelledby={`tab-${a.id}`} key={a.id}>
+      <div className={`aud-panel tint-${a.tint}`} role="tabpanel" id={`panel-${a.id}`} aria-labelledby={`tab-${a.id}`} key={a.id}>
         <div className="aud-copy">
           <h3>{a.title}</h3>
           <ul>
@@ -48,7 +48,7 @@ export function AudienceTabs() {
               <li key={p}>{p}</li>
             ))}
           </ul>
-          <Link href="/demo" className="lp-btn">
+          <Link href="/demo" className="lp-btn lp-btn-ink">
             Book a demo
           </Link>
         </div>
