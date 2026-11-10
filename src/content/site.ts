@@ -20,7 +20,6 @@ export const CONTACT = {
 
 export const NAV = [
   { href: "/services", label: "Services" },
-  { href: "/work", label: "Work" },
   { href: "/how-it-works", label: "How it works" },
   { href: "/pricing", label: "Pricing" },
 ];

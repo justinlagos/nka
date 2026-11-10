@@ -20,11 +20,12 @@ export function Mark({ className, title }: { className?: string; title?: string 
   );
 }
 
-// Plain name until the living logo (built from the three approved marks) replaces it.
-export function Wordmark({ className }: { className?: string }) {
+// The Signature state of the nka.studio identity. Ink follows the background.
+export function Wordmark({ className, ink = "black" }: { className?: string; ink?: "black" | "white" }) {
   return (
     <span className={`wordmark ${className ?? ""}`}>
-      <span className="wordmark-text">nka.studio</span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={`/brand/signature-${ink}.png`} alt="nka.studio" className="wordmark-img" width={677} height={630} />
     </span>
   );
 }

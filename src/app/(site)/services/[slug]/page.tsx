@@ -4,7 +4,6 @@ import { SERVICE_IMG } from "@/content/images";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { SERVICES, serviceBySlug } from "@/content/services";
-import { visibleWork } from "@/content/work";
 
 export function generateStaticParams() {
   return SERVICES.map((s) => ({ slug: s.slug }));
@@ -18,7 +17,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function ServicePage({ params }: { params: Promise<{ slug: string }> }) {
   const service = serviceBySlug((await params).slug);
   if (!service) notFound();
-  const related = visibleWork().filter((w) => w.services.includes(service.slug));
   const img = SERVICE_IMG[service.slug];
 
   return (
@@ -64,26 +62,6 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
           </div>
         </div>
       </section>
-      {related.length > 0 && (
-        <section className="section">
-          <div className="wrap">
-            <h2 className="h2" style={{ marginBottom: 24 }}>
-              Related work
-            </h2>
-            <ul className="work-list">
-              {related.map((w) => (
-                <li key={w.slug}>
-                  <div>
-                    <div className="work-client">{w.client}</div>
-                    <div className="work-project">{w.project}</div>
-                  </div>
-                  <p>{w.summary}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
       <section className="section on-ink">
         <div className="wrap cta-band">
           <h2 className="h2">Need {service.name.toLowerCase()} this month?</h2>

@@ -21,7 +21,7 @@ export default async function ConfirmSignIn({
     <div className="auth">
       <div className="auth-art">
         <Link href="/" aria-label="Nka home" style={{ color: "inherit" }}>
-          <Wordmark />
+          <Wordmark ink="white" />
         </Link>
         <UliLine />
         <p className="muted">{SITE.meaning}</p>

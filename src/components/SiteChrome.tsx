@@ -32,13 +32,12 @@ export function SiteFooter() {
     <footer className="site-footer">
       <div className="wrap footer-grid">
         <div>
-          <Wordmark />
+          <Wordmark ink="white" />
           <p className="footer-meaning">{SITE.meaning}</p>
           <Clocks />
         </div>
         <nav aria-label="Footer" className="footer-links">
           <Link href="/services">Services</Link>
-          <Link href="/work">Work</Link>
           <Link href="/how-it-works">How it works</Link>
           <Link href="/pricing">Pricing</Link>
           <Link href="/about">Studio</Link>

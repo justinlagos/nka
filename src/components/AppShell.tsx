@@ -35,7 +35,7 @@ export function AppShell({
     <div className="app">
       <aside className="app-side">
         <Link href={current ? "/app" : profile.is_staff ? "/admin" : "/app"} aria-label="Nka workspace home" style={{ color: "inherit", padding: "0 12px" }}>
-          <Wordmark />
+          <Wordmark ink="white" />
         </Link>
         {memberships.length > 1 ? (
           <form action={switchOrg} className="org-switch">
