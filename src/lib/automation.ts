@@ -1,7 +1,7 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { askClaude, jsonFrom } from "@/lib/ai";
-import { generateImage, imagesEnabled, type ImageSize } from "@/lib/images";
+import { generateImage, imagesEnabled, type ImageFailure, type ImageSize } from "@/lib/images";
 import { notifyClient, notifyStudio } from "@/lib/notify";
 import { addWorkingDays, ukDate } from "@/lib/ontime";
 import { normaliseBrief, BRIEF_FIELDS } from "@/lib/brief";
@@ -166,7 +166,8 @@ export async function makeImages(projectId: string, mode: "concepts" | "instant"
   }
   await db.from("projects").update({ concepts_status: "pending" }).eq("id", projectId);
   const options = await planOptions(mode, ctx);
-  const images = await Promise.all(options.map((o) => generateImage(o.prompt, o.size)));
+  let reason = "failed" as ImageFailure;
+  const images = await Promise.all(options.map((o) => generateImage(o.prompt, o.size, (f) => (reason = f))));
   const saved: { title: string; path: string; size: number }[] = [];
   for (let i = 0; i < options.length; i++) {
     const bytes = images[i];
@@ -197,9 +198,29 @@ export async function makeImages(projectId: string, mode: "concepts" | "instant"
   // Instant: the options are the deliverables.
   if (!saved.length) {
     // Couldn't make anything: hand it to the studio instead of leaving the client waiting.
-    await db.from("projects").update({ kind: "brief", status: "submitted", concepts_status: "failed" }).eq("id", projectId);
-    await db.from("project_events").insert({ project_id: p.id, org_id: p.org_id, kind: "instant_failed", detail: {} });
-    await notifyStudio(`Instant brief needs a designer: ${projectRef(p.number)} ${p.title}`, [`${origin}/app/projects/${p.id}`]);
+    // Clear the zero-cost Instant estimate so the studio prices it like any other brief.
+    await db
+      .from("projects")
+      .update({
+        kind: "brief",
+        status: "submitted",
+        concepts_status: "failed",
+        estimate_amount: null,
+        estimate_notes: null,
+        estimate_sent_at: null,
+        approved_at: null,
+        approved_by: null,
+      })
+      .eq("id", projectId);
+    await db.from("project_events").insert({ project_id: p.id, org_id: p.org_id, kind: "instant_failed", detail: { reason } });
+    await notifyStudio(`Instant brief needs a designer: ${projectRef(p.number)} ${p.title}`, [
+      reason === "quota"
+        ? "The image service account has run out of credit. Add credit at platform.openai.com/settings/organization/billing."
+        : "The image service didn't return any options.",
+      `${origin}/app/projects/${p.id}`,
+    ]);
+    // Carry on exactly as if they had picked Designer: date it and start it if the plan allows.
+    await sizeAndStart(projectId, origin);
     return;
   }
   await db.from("deliverables").insert(

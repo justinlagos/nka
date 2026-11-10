@@ -7,10 +7,20 @@ export function imagesEnabled(): boolean {
 
 export type ImageSize = "1024x1024" | "1536x1024" | "1024x1536";
 
-// One image from the image model, as PNG bytes. Null when there's no key or it fails.
-export async function generateImage(prompt: string, size: ImageSize = "1024x1024"): Promise<Uint8Array | null> {
+export type ImageFailure = "off" | "quota" | "failed";
+
+// One image from the image model, as PNG bytes. On failure, `why` says whether the account is out
+// of credit (quota), the key is missing (off), or something else went wrong.
+export async function generateImage(
+  prompt: string,
+  size: ImageSize = "1024x1024",
+  why?: (f: ImageFailure) => void,
+): Promise<Uint8Array | null> {
   const { openaiKey, imageModel } = serverEnv();
-  if (!openaiKey) return null;
+  if (!openaiKey) {
+    why?.("off");
+    return null;
+  }
   try {
     const res = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
@@ -19,7 +29,9 @@ export async function generateImage(prompt: string, size: ImageSize = "1024x1024
       signal: AbortSignal.timeout(150_000),
     });
     if (!res.ok) {
-      console.error("Image generation failed", res.status, (await res.text()).slice(0, 300));
+      const body = (await res.text()).slice(0, 300);
+      console.error("Image generation failed", res.status, body);
+      why?.(/insufficient_quota|credit_balance|billing/i.test(body) ? "quota" : "failed");
       return null;
     }
     const data = (await res.json()) as { data?: { b64_json?: string; url?: string }[] };
@@ -27,11 +39,13 @@ export async function generateImage(prompt: string, size: ImageSize = "1024x1024
     if (item?.b64_json) return Uint8Array.from(Buffer.from(item.b64_json, "base64"));
     if (item?.url) {
       const img = await fetch(item.url, { signal: AbortSignal.timeout(30_000) });
-      return img.ok ? new Uint8Array(await img.arrayBuffer()) : null;
+      if (img.ok) return new Uint8Array(await img.arrayBuffer());
     }
+    why?.("failed");
     return null;
   } catch (err) {
     console.error("Image generation error", err);
+    why?.("failed");
     return null;
   }
 }

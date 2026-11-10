@@ -40,7 +40,7 @@ const EVENT_TEXT: Record<string, (d: Record<string, unknown>) => string> = {
   auto_started: (d) => `started automatically, due ${date(String(d.due))}`,
   instant_started: () => "asked for instant options",
   instant_ready: (d) => `made ${d.count} instant options`,
-  instant_failed: () => "couldn't make instant options, so passed it to the studio",
+  instant_failed: () => "couldn't make the instant options, so your designer is making it instead",
 };
 
 export const maxDuration = 300;
@@ -144,6 +144,7 @@ export default async function ProjectPage({
   const making = isInstant && status === "in_progress" && p.concepts_status === "pending";
   const sizing = !isResize && !isInstant && ["submitted", "queued"].includes(status) && !p.sized_at;
   const live = making || sizing || p.concepts_status === "pending";
+  const instantFailed = !isInstant && (eRows ?? []).some((e) => e.kind === "instant_failed");
 
   return (
     <>
@@ -175,6 +176,14 @@ export default async function ProjectPage({
             {making
               ? "Making three options from your brief and brand. This takes about a minute; this page updates by itself."
               : "Instant brief sent."}
+          </p>
+        </div>
+      )}
+      {instantFailed && !["completed", "cancelled"].includes(status) && (
+        <div className="callout">
+          <p>
+            Instant couldn&apos;t make options this time, so this brief has gone to your designer instead. It didn&apos;t use
+            one of your Instant briefs.
           </p>
         </div>
       )}
@@ -517,7 +526,7 @@ export default async function ProjectPage({
             <ul className="events">
               {events.map((e) => (
                 <li key={e.id}>
-                  <b>{displayName(who.get(e.actor))}</b> {(EVENT_TEXT[e.kind] ?? (() => e.kind))(e.detail as Record<string, unknown>)}
+                  <b>{e.actor ? displayName(who.get(e.actor)) : "Nka"}</b> {(EVENT_TEXT[e.kind] ?? (() => e.kind))(e.detail as Record<string, unknown>)}
                   <br />
                   <span className="small">{dateTime(e.created_at)}</span>
                 </li>
