@@ -30,7 +30,7 @@ const DOCS: Record<string, { title: string; updated: string; body: { h: string; 
           "We work to the brief you approve. We revise work until it meets that brief. If you change the brief, we'll tell you what that means for timing or cost before we continue.",
           "An approved estimate is a fixed price. If the work takes us longer than estimated, we don't charge more. The price only changes if you ask for something new and approve a new estimate.",
           "Other sizes and formats of work you have approved are included at no charge and don't count against your plan.",
-          "One named designer leads your account. If we need to change who that is, we'll tell you first and give you a written handover note.",
+          "One lead designer works on your account. If we need to change who that is, we'll tell you first and give you a written handover note. For everyone's privacy, clients and designers talk only through Nka: phone numbers, email addresses and social or chat links aren't shared either way.",
           "Delivery dates in estimates assume you reply to questions and reviews within two working days.",
         ],
       },

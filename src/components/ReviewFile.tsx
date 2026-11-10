@@ -169,7 +169,7 @@ export function ReviewFile({
                   <div>
                     <div className="comment-meta">
                       <b>{c.authorName}</b>
-                      {c.authorStaff ? " (studio)" : ""}, {dateTime(c.createdAt)}
+                      {c.authorStaff ? " (Nka)" : ""}, {dateTime(c.createdAt)}
                       {n >= 0 ? `, pin ${n + 1}` : ""}
                     </div>
                     <p className="comment-body">{c.body}</p>

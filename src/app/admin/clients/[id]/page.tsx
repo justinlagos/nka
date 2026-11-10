@@ -20,7 +20,7 @@ export default async function Client({ params }: { params: Promise<{ id: string 
     supabase.from("projects").select("id, number, title, status, deadline, estimate_due, updated_at").eq("org_id", id).order("updated_at", { ascending: false }).limit(100),
     supabase.from("budget_ledger").select("id, kind, amount, effective_on, note").eq("org_id", id).order("effective_on", { ascending: false }),
     supabase.from("brand_books").select("about, updated_at").eq("org_id", id).maybeSingle(),
-    supabase.from("profiles").select("id, full_name, email").eq("is_staff", true).order("full_name"),
+    supabase.from("profiles").select("id, full_name, email, alias, is_talent").or("is_staff.eq.true,is_talent.eq.true").order("full_name"),
     supabase.from("lead_changes").select("id, from_user, to_user, note, created_at").eq("org_id", id).order("created_at", { ascending: false }).limit(20),
   ]);
   const leads = leadRows ?? [];
@@ -104,7 +104,7 @@ export default async function Client({ params }: { params: Promise<{ id: string 
             <p className="small">
               {org.lead_id
                 ? `${displayName(who.get(org.lead_id))}, since ${date(org.lead_since)}. New briefs go to them.`
-                : "Nobody named yet. Name one before the first brief: the client sees who it is."}
+                : "No designer yet. New clients get the least busy designer automatically; pick one here to change it."}
             </p>
             <ActionForm action={setLead} submit={org.lead_id ? "Change lead" : "Name lead"} pending="Saving" buttonClass="btn btn-small">
               <input type="hidden" name="org" value={org.id} />
@@ -117,6 +117,7 @@ export default async function Client({ params }: { params: Promise<{ id: string 
                   {(staffRows ?? []).map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.full_name || s.email}
+                      {s.is_talent ? (s.alias ? ` (clients see "${s.alias}")` : "") : " (admin)"}
                     </option>
                   ))}
                 </select>
@@ -130,7 +131,7 @@ export default async function Client({ params }: { params: Promise<{ id: string 
                     maxLength={2000}
                     placeholder="Why the change, and what the new designer has been told about your brand and open work."
                   />
-                  <span className="hint">Required when changing. The client sees it on their home page.</span>
+                  <span className="hint">Required when changing. The client is emailed it and sees it on their home page. Don&apos;t name the designer.</span>
                 </label>
               )}
             </ActionForm>

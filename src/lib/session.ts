@@ -4,7 +4,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 
-export type Profile = { id: string; email: string; full_name: string; is_staff: boolean };
+// is_staff: the Nka admin, sees everything. is_talent: a designer, sees only the clients assigned to them.
+export type Profile = { id: string; email: string; full_name: string; is_staff: boolean; is_talent: boolean; alias: string };
 export type Role = "owner" | "admin" | "member" | "viewer";
 export type Org = {
   id: string;
@@ -28,7 +29,7 @@ export const getSession = cache(async () => {
   if (!userId) return { supabase, userId: null, profile: null as Profile | null };
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, email, full_name, is_staff")
+    .select("id, email, full_name, is_staff, is_talent, alias")
     .eq("id", userId)
     .maybeSingle();
   return { supabase, userId, profile: (profile as Profile | null) ?? null };
@@ -64,7 +65,7 @@ export const getCurrentMembership = cache(async (): Promise<Membership | null> =
 export async function requireMembership() {
   const s = await requireProfile();
   const membership = await getCurrentMembership();
-  if (!membership) redirect("/app/onboarding");
+  if (!membership) redirect(s.profile.is_talent && !s.profile.is_staff ? "/studio" : "/app/onboarding");
   return { ...s, membership, org: membership.org, role: membership.role };
 }
 
@@ -72,6 +73,17 @@ export async function requireStaff() {
   const s = await requireProfile();
   if (!s.profile.is_staff) redirect("/app");
   return s;
+}
+
+// Designers and the admin: anyone who works on client projects.
+export async function requireStudio() {
+  const s = await requireProfile();
+  if (!s.profile.is_staff && !s.profile.is_talent) redirect("/app");
+  return { ...s, isAdmin: s.profile.is_staff };
+}
+
+export function isDesigner(p: Pick<Profile, "is_staff" | "is_talent">) {
+  return p.is_talent && !p.is_staff;
 }
 
 export function canEdit(role: Role, isStaff = false) {

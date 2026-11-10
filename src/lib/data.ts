@@ -11,14 +11,19 @@ export async function signedUrls(supabase: SupabaseClient, paths: string[], seco
   return out;
 }
 
+// is_staff here means "on the Nka side" (admin or designer), for labelling messages.
 export type PersonRow = { id: string; full_name: string; email: string; is_staff: boolean };
 
+// Names as the signed-in person is allowed to see them (display_names in 0012): clients see a designer's
+// alias, designers see client first names, the admin sees real names. Never an email.
 export async function people(supabase: SupabaseClient, ids: (string | null | undefined)[]): Promise<Map<string, PersonRow>> {
   const unique = [...new Set(ids.filter((x): x is string => Boolean(x)))];
   const out = new Map<string, PersonRow>();
   if (!unique.length) return out;
-  const { data } = await supabase.from("profiles").select("id, full_name, email, is_staff").in("id", unique);
-  for (const p of (data ?? []) as PersonRow[]) out.set(p.id, p);
+  const { data } = await supabase.rpc("display_names", { p_ids: unique });
+  for (const p of (data ?? []) as { id: string; name: string; studio: boolean }[]) {
+    out.set(p.id, { id: p.id, full_name: p.name, email: "", is_staff: p.studio });
+  }
   return out;
 }
 

@@ -37,8 +37,8 @@ export const STEPS = [
 export const PROMISES: { title: string; body: string; how: string }[] = [
   {
     title: "One designer who knows your brand",
-    body: "Not whoever is free this week. One named designer leads your account and works on your briefs.",
-    how: "Their name is on your home page. If it ever changes, you get a written handover first.",
+    body: "Not whoever is free this week. One lead designer works on your account and on every brief.",
+    how: "The same designer every time. If that ever changes, you get a written handover first.",
   },
   {
     title: "Prices that don't creep",
@@ -86,7 +86,7 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Who does the work?",
-    a: "One named designer leads your account. The studio is led by Justin Ukaegbu, a brand and communication designer with more than ten years in agencies and in-house. Specialists join for motion, illustration or development when a project needs them, under your lead designer.",
+    a: "One lead designer works on your account. The studio is led by Justin Ukaegbu, a brand and communication designer with more than ten years in agencies and in-house. Specialists join for motion, illustration or development when a project needs them, under your lead designer.",
   },
   {
     q: "Can we pause or cancel?",

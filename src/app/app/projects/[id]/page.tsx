@@ -31,6 +31,7 @@ type Deliverable = {
 const EVENT_TEXT: Record<string, (d: Record<string, unknown>) => string> = {
   status: (d) => `moved to ${STATUS[d.to as ProjectStatus]?.label ?? d.to}`,
   estimate_sent: () => "sent an estimate",
+  estimate_proposed: (d) => `proposed delivery by ${date(String(d.due))}`,
   estimate_approved: () => "approved the estimate",
   estimate_declined: () => "sent the estimate back",
   deliverable_added: (d) => `added ${d.title} v${d.version}`,
@@ -67,8 +68,13 @@ export default async function ProjectPage({
   const org = p.org as { id: string; name: string; plan: string; currency: string };
   const memberships = await getMemberships();
   const role = (memberships.find((m) => m.org.id === p.org_id)?.role ?? null) as Role | null;
-  const staff = profile.is_staff;
-  const mayEdit = staff || (role !== null && canEdit(role));
+  // admin: Nka, sees everything. designer: the client's designer (row-level security already limits them to
+  // their own clients). Either is "studio" on this page.
+  const admin = profile.is_staff;
+  const designer = profile.is_talent && !profile.is_staff;
+  const staff = admin || designer;
+  const mayEdit = admin || (role !== null && canEdit(role));
+  const mayTalk = mayEdit || designer;
   const mayAdmin = role !== null && canAdmin(role);
 
   const [{ data: dRows }, { data: cRows }, { data: aRows }, { data: eRows }, staffList] = await Promise.all([
@@ -84,8 +90,8 @@ export default async function ProjectPage({
       .order("created_at"),
     supabase.from("attachments").select("id, file_name, size, storage_path, mime, kind").eq("project_id", id).order("created_at"),
     supabase.from("project_events").select("id, actor, kind, detail, created_at").eq("project_id", id).order("created_at", { ascending: false }).limit(40),
-    staff
-      ? supabase.from("profiles").select("id, full_name, email").eq("is_staff", true).order("full_name")
+    admin
+      ? supabase.from("profiles").select("id, full_name, email").or("is_staff.eq.true,is_talent.eq.true").order("full_name")
       : Promise.resolve({ data: [] as { id: string; full_name: string; email: string }[] }),
   ]);
 
@@ -131,7 +137,7 @@ export default async function ProjectPage({
 
   const status = p.status as ProjectStatus;
   const brief = normaliseBrief(p.brief);
-  const showMoney = org.plan === "flex" || org.plan === "none" || org.plan === "bespoke";
+  const showMoney = !designer && (org.plan === "flex" || org.plan === "none" || org.plan === "bespoke");
   const current = stageIndex(status);
   const general = comments.filter((c) => !c.deliverable_id);
   const timing = deliveryTiming(
@@ -325,7 +331,7 @@ export default async function ProjectPage({
                     comments={comments.filter((c) => c.deliverable_id === latest.id).map(toReview)}
                     projectId={p.id}
                     orgId={p.org_id}
-                    canComment={mayEdit && status !== "cancelled"}
+                    canComment={mayTalk && status !== "cancelled"}
                     canDecide={(role !== null && canEdit(role)) && status !== "cancelled"}
                   />
                 ))}
@@ -417,7 +423,7 @@ export default async function ProjectPage({
                       <div>
                         <div className="comment-meta">
                           <b>{r.authorName}</b>
-                          {r.authorStaff ? " (studio)" : ""}, {dateTime(r.createdAt)}
+                          {r.authorStaff ? " (Nka)" : ""}, {dateTime(r.createdAt)}
                         </div>
                         <p className="comment-body">{r.body}</p>
                       </div>
@@ -426,14 +432,24 @@ export default async function ProjectPage({
                 })}
               </div>
             )}
-            {mayEdit && (
+            {mayTalk && (
               <ActionForm action={addProjectComment} submit="Post" pending="Posting" buttonClass="btn btn-small btn-ink" resetOnSuccess>
                 <input type="hidden" name="project_id" value={p.id} />
                 <input type="hidden" name="org_id" value={p.org_id} />
                 <label className="field" style={{ marginBottom: 8 }}>
                   <span className="skip">Message</span>
-                  <textarea name="body" rows={3} required maxLength={5000} placeholder="Write a message to the studio" />
+                  <textarea
+                    name="body"
+                    rows={3}
+                    required
+                    maxLength={5000}
+                    placeholder={staff ? "Write a message to the client" : "Write a message to your designer"}
+                  />
                 </label>
+                <p className="small muted" style={{ margin: "0 0 8px" }}>
+                  {staff ? "The client is emailed that there's a new message." : "Your designer is emailed that there's a new message."} Phone
+                  numbers, email addresses and social links can&apos;t be shared here.
+                </p>
               </ActionForm>
             )}
           </section>
@@ -449,12 +465,22 @@ export default async function ProjectPage({
                 assignee: p.assignee,
                 plan: org.plan,
                 currency: org.currency,
-                suggested: p.sized_at
-                  ? { hours: p.suggested_hours, due: p.suggested_due, amount: p.suggested_amount, notes: p.suggested_notes ?? "" }
-                  : null,
+                // A date the designer proposed wins over Nka's own suggestion.
+                suggested:
+                  p.estimate_due && !p.estimate_sent_at
+                    ? { hours: p.estimate_hours, due: p.estimate_due, amount: p.suggested_amount, notes: p.estimate_notes ?? "" }
+                    : p.sized_at
+                      ? { hours: p.suggested_hours, due: p.suggested_due, amount: p.suggested_amount, notes: p.suggested_notes ?? "" }
+                      : null,
               }}
               staff={(staffList.data ?? []) as { id: string; full_name: string; email: string }[]}
+              admin={admin}
             />
+          )}
+          {staff && (
+            <p className="small" style={{ margin: "0 0 16px" }}>
+              <Link href={admin ? `/admin/clients/${p.org_id}` : `/studio/clients/${p.org_id}`}>{org.name}: brand book and other projects</Link>
+            </p>
           )}
           <section className="panel">
             <h2>Details</h2>
@@ -549,7 +575,9 @@ export default async function ProjectPage({
             </section>
           )}
           <p className="small">
-            <Link href={staff && !role ? "/admin" : "/app/projects"}>Back to {staff && !role ? "the studio queue" : "projects"}</Link>
+            <Link href={designer ? "/studio" : staff && !role ? "/admin" : "/app/projects"}>
+              Back to {designer ? "your work" : staff && !role ? "the studio queue" : "projects"}
+            </Link>
           </p>
         </aside>
       </div>

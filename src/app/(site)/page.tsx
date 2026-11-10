@@ -243,7 +243,7 @@ export default function Home() {
               <div className="speed2-top">
                 <span className="lp-chip">Designer</span>
                 <b className="speed2-fig">2 days</b>
-                <p>Your named designer makes it. A delivery date the moment you send the brief, revisions until it meets it, every size included.</p>
+                <p>Your lead designer makes it. A delivery date the moment you send the brief, revisions until it meets it, every size included.</p>
               </div>
               <Pic k="designer" sizes="(max-width: 900px) 92vw, 45vw" />
             </article>
@@ -356,7 +356,7 @@ export default function Home() {
               How pricing <em>works.</em>
             </h2>
             <p>
-              One monthly price, agreed with you and fixed in writing. Every plan includes your named designer, revisions and
+              One monthly price, agreed with you and fixed in writing. Every plan includes your lead designer, revisions and
               free resizes.
             </p>
           </div>

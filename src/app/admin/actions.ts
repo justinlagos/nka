@@ -1,10 +1,11 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { done, fail, type ActionState } from "@/lib/action";
-import { requireStaff } from "@/lib/session";
+import { requireStaff, requireStudio } from "@/lib/session";
 import { summariseBudget, type LedgerEntry } from "@/lib/budget";
 import { planById } from "@/lib/plans";
-import { notifyClient } from "@/lib/notify";
+import { notifyClient, notifyDirect, notifyStudio } from "@/lib/notify";
+import { siteOrigin } from "@/lib/origin";
 import { date, projectRef } from "@/lib/format";
 
 const str = (v: FormDataEntryValue | null, n = 4000) => String(v ?? "").trim().slice(0, n);
@@ -22,9 +23,9 @@ function refresh(projectId?: string, orgId?: string) {
 }
 
 export async function sendEstimate(_prev: ActionState, form: FormData): Promise<ActionState> {
-  const { supabase } = await requireStaff();
+  const { supabase, isAdmin } = await requireStudio();
   const id = str(form.get("id"), 64);
-  const amount = num(form.get("amount"));
+  const amount = isAdmin ? num(form.get("amount")) : null;
   const hours = num(form.get("hours"));
   const due = str(form.get("due"), 10);
   if (Number.isNaN(amount) || Number.isNaN(hours)) return { ok: false, error: "Amount and hours must be numbers." };
@@ -37,7 +38,17 @@ export async function sendEstimate(_prev: ActionState, form: FormData): Promise<
     p_notes: str(form.get("notes"), 4000),
   });
   if (error) return fail(error);
-  const { data: p } = await supabase.from("projects").select("org_id, number, title").eq("id", id).single();
+  const { data: p } = await supabase.from("projects").select("org_id, number, title, org:orgs(name)").eq("id", id).single();
+  if (p && data === "proposed") {
+    const org = p.org as unknown as { name: string } | null;
+    await notifyStudio(`Needs a price: ${projectRef(p.number)} ${p.title}`, [
+      `${org?.name ?? "A client"} isn't on a paid-up plan, so this brief needs a price before it goes to them.`,
+      `The designer proposed delivery by ${date(due)}${hours ? `, ${hours} hours` : ""}.`,
+      `${await siteOrigin()}/app/projects/${id}`,
+    ]);
+    refresh(id);
+    return done("Date proposed. The Nka admin adds the price and sends it to the client.");
+  }
   if (p) {
     await notifyClient(
       p.org_id,
@@ -63,7 +74,7 @@ export async function sendEstimate(_prev: ActionState, form: FormData): Promise<
 }
 
 export async function setStatus(_prev: ActionState, form: FormData): Promise<ActionState> {
-  const { supabase } = await requireStaff();
+  const { supabase } = await requireStudio();
   const id = str(form.get("id"), 64);
   const { error } = await supabase.rpc("staff_set_status", { p_project: id, p_status: str(form.get("status"), 30) });
   if (error) return fail(error);
@@ -91,7 +102,7 @@ export async function addDeliverable(input: {
   size: number;
   note: string;
 }) {
-  const { supabase } = await requireStaff();
+  const { supabase } = await requireStudio();
   const { error } = await supabase.rpc("staff_add_deliverable", {
     p_project: input.projectId,
     p_title: input.title.slice(0, 200),
@@ -146,10 +157,88 @@ export async function setLead(_prev: ActionState, form: FormData): Promise<Actio
   const org = str(form.get("org"), 64);
   const lead = str(form.get("lead"), 64);
   if (!lead) return { ok: false, error: "Choose a designer." };
-  const { error } = await supabase.rpc("staff_set_lead", { p_org: org, p_user: lead, p_note: str(form.get("note"), 2000) });
+  const note = str(form.get("note"), 2000);
+  const { data: before } = await supabase.from("orgs").select("name, lead_id").eq("id", org).single();
+  const { error } = await supabase.rpc("staff_set_lead", { p_org: org, p_user: lead, p_note: note });
   if (error) return fail(error);
+  const origin = await siteOrigin();
+  // The new designer hears about their client; the client gets the handover note (never the designer's name).
+  const { data: d } = await supabase.from("profiles").select("email").eq("id", lead).maybeSingle();
+  if (d?.email && before) {
+    await sendTo(d.email, `New client: ${before.name}`, "You're the designer for a new client", [
+      `${before.name} is yours from today. Their open projects have moved to you.`,
+      "Read their brand book and open briefs first.",
+    ], `${origin}/studio`, "Open your work");
+  }
+  if (before?.lead_id && note) {
+    await notifyClient(org, {
+      origin,
+      subject: "A new designer on your account",
+      heading: "Your designer has changed",
+      lines: [note, "Your files, briefs and conversations stay where they are."],
+      path: "/app",
+      button: "Open your workspace",
+    });
+  }
   refresh(undefined, org);
   return done("Lead saved. Open work has moved to them.");
+}
+
+// ---------- Designers and partners ----------
+
+async function sendTo(email: string, subject: string, heading: string, lines: string[], link: string, button: string) {
+  await notifyDirect(email, { subject, heading, lines, link, button });
+}
+
+export async function addDesigner(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const { supabase } = await requireStaff();
+  const email = str(form.get("email"), 200).toLowerCase();
+  const partner = str(form.get("partner"), 64);
+  const { data, error } = await supabase.rpc("admin_add_designer", {
+    p_email: email,
+    p_alias: str(form.get("alias"), 60),
+    p_partner: partner || null,
+  });
+  if (error) return fail(error);
+  await sendTo(email, "You're a designer on Nka", "Welcome to Nka", [
+    "You've been added as a designer. Sign in with this email address to see the clients assigned to you.",
+    "Clients see you by the name Nka gives you, never your own name or contact details. Keep all conversation in Nka.",
+  ], `${await siteOrigin()}/signin?next=/studio`, "Sign in");
+  revalidatePath("/admin/designers");
+  return done(data === "ready" ? "Added. They can see their clients now." : "Added. They become a designer when they first sign in.");
+}
+
+export async function updateDesigner(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const { supabase } = await requireStaff();
+  const partner = str(form.get("partner"), 64);
+  const { error } = await supabase.rpc("admin_set_designer", {
+    p_user: str(form.get("id"), 64),
+    p_alias: str(form.get("alias"), 60),
+    p_partner: partner || null,
+    p_active: form.get("active") === "on",
+  });
+  if (error) return fail(error);
+  revalidatePath("/admin/designers");
+  return done("Saved.");
+}
+
+export async function savePartner(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const { supabase } = await requireStaff();
+  const id = str(form.get("id"), 64);
+  const share = num(form.get("share"));
+  if (Number.isNaN(share)) return { ok: false, error: "The share must be a number." };
+  const { error } = await supabase.rpc("admin_save_partner", {
+    p_id: id || null,
+    p_name: str(form.get("name"), 200),
+    p_contact_name: str(form.get("contact_name"), 200),
+    p_contact_email: str(form.get("contact_email"), 200),
+    p_share: share,
+    p_agreement: str(form.get("agreement"), 5000),
+    p_active: id ? form.get("active") === "on" : true,
+  });
+  if (error) return fail(error);
+  revalidatePath("/admin/designers");
+  return done("Partner saved.");
 }
 
 export async function addLedgerEntry(_prev: ActionState, form: FormData): Promise<ActionState> {

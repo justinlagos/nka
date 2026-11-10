@@ -14,10 +14,18 @@ const CLIENT_NAV = [
   { href: "/app/team", label: "Team" },
 ];
 
+// The Nka admin sees everything.
 const STAFF_NAV = [
   { href: "/admin", label: "Studio queue", exact: true },
   { href: "/admin/clients", label: "Clients" },
+  { href: "/admin/designers", label: "Designers" },
   { href: "/admin/leads", label: "Call requests" },
+];
+
+// A designer sees only their own clients and projects.
+const DESIGNER_NAV = [
+  { href: "/studio", label: "Your work", exact: true },
+  { href: "/studio/clients", label: "Your clients" },
 ];
 
 export function AppShell({
@@ -34,7 +42,7 @@ export function AppShell({
   return (
     <div className="app">
       <aside className="app-side">
-        <Link href={current ? "/app" : profile.is_staff ? "/admin" : "/app"} aria-label="Nka workspace home" style={{ color: "inherit", padding: "0 12px" }}>
+        <Link href={current ? "/app" : profile.is_staff ? "/admin" : profile.is_talent ? "/studio" : "/app"} aria-label="Nka workspace home" style={{ color: "inherit", padding: "0 12px" }}>
           <Wordmark ink="white" />
         </Link>
         {memberships.length > 1 ? (
@@ -57,6 +65,12 @@ export function AppShell({
           <div className="org-name">{current.org.name}</div>
         ) : null}
         {current && <AppNav items={CLIENT_NAV} label="Workspace" />}
+        {profile.is_talent && !profile.is_staff && (
+          <>
+            <div className="app-nav-label">Designer</div>
+            <AppNav items={DESIGNER_NAV} label="Designer" />
+          </>
+        )}
         {profile.is_staff && (
           <>
             <div className="app-nav-label">Studio</div>
@@ -67,7 +81,10 @@ export function AppShell({
           </>
         )}
         <div className="app-side-foot">
-          <span title={profile.email}>{profile.full_name || profile.email}</span>
+          <span title={profile.email}>
+            {profile.full_name || profile.email}
+            {profile.is_talent && !profile.is_staff && profile.alias ? ` (clients see "${profile.alias}")` : ""}
+          </span>
           <Link href="/">Nka site</Link>
           <form action="/auth/signout" method="post">
             <button type="submit">Sign out</button>

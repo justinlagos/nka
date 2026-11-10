@@ -8,9 +8,7 @@ import { askClaude, jsonFrom, aiEnabled } from "@/lib/ai";
 import { brandBookText, normaliseBrief, structureBrief, SERVICE_OPTIONS, type Brief } from "@/lib/brief";
 import { makeImages, sizeAndStart } from "@/lib/automation";
 import { imagesEnabled } from "@/lib/images";
-import { notifyStudio } from "@/lib/notify";
 import { siteOrigin } from "@/lib/origin";
-import { projectRef } from "@/lib/format";
 import { applyBrandScan, scanWebsite } from "@/lib/brand-sync";
 
 export type ChatMessage = { from: "you" | "nka"; text: string };
@@ -111,7 +109,6 @@ async function afterSend(projectId: string, lane: "designer" | "instant") {
 
 export async function sendBrief(projectId: string, lane: "designer" | "instant"): Promise<{ ok: boolean; error?: string; path?: string }> {
   const { supabase } = await requireProfile();
-  const m = await getCurrentMembership();
   if (lane === "instant") {
     if (!imagesEnabled()) return { ok: false, error: "Instant isn't switched on yet. Send it to your designer." };
     const { error } = await supabase.rpc("start_instant", { p_project: projectId });
@@ -120,11 +117,7 @@ export async function sendBrief(projectId: string, lane: "designer" | "instant")
     const { error } = await supabase.rpc("submit_project", { p_project: projectId });
     if (error) return { ok: false, error: fail(error).error };
   }
-  const { data: p } = await supabase.from("projects").select("number, title").eq("id", projectId).maybeSingle();
-  await notifyStudio(`${lane === "instant" ? "Instant brief" : "New brief"}: ${p ? projectRef(p.number) : ""} ${p?.title ?? ""}`, [
-    `From ${m?.org.name ?? "a client"}`,
-    `${await siteOrigin()}/app/projects/${projectId}`,
-  ]);
+  // The designer is emailed by sizeAndStart once Nka has worked out the date (or by makeImages if Instant fails).
   await afterSend(projectId, lane);
   revalidatePath("/app", "layout");
   return { ok: true, path: `/app/projects/${projectId}?sent=${lane}` };

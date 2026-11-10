@@ -15,7 +15,7 @@ const SHAPES = [
   {
     name: "Bespoke",
     forWho: "Large programmes, tenders and procurement rules.",
-    points: ["Quoted to the format you need", "Invoiced from our UK or Nigerian company", "Named team for the length of the work"],
+    points: ["Quoted to the format you need", "Invoiced from our UK or Nigerian company", "One team for the length of the work"],
   },
 ];
 
@@ -46,7 +46,7 @@ export default function Pricing() {
         <div className="wrap">
           <div className="section-head">
             <h2 className="h1">Ways to work with us</h2>
-            <p className="muted">Plans differ by how many requests run at once. Every plan includes your named designer, revisions and free resizes.</p>
+            <p className="muted">Plans differ by how many requests run at once. Every plan includes your lead designer, revisions and free resizes.</p>
           </div>
           <ul className="shape-list">
             {SHAPES.map((s) => (

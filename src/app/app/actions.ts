@@ -6,7 +6,7 @@ import { done, fail, type ActionState } from "@/lib/action";
 import { ORG_COOKIE, getCurrentMembership, getMemberships, requireProfile } from "@/lib/session";
 import { briefFromForm, brandBookText, emptyBrief, SERVICE_OPTIONS } from "@/lib/brief";
 import { draftBrief } from "@/lib/ai";
-import { notifyStudio } from "@/lib/notify";
+import { notifyClient, notifyDesigner } from "@/lib/notify";
 import { sendBrief } from "./brief-actions";
 import { siteOrigin } from "@/lib/origin";
 import { getStripe, priceForPlan } from "@/lib/stripe";
@@ -185,7 +185,22 @@ async function rpcAndRefresh(fn: string, args: Record<string, unknown>, projectI
 export async function approveEstimate(_prev: ActionState, form: FormData): Promise<ActionState> {
   const id = str(form.get("id"), 64);
   const r = await rpcAndRefresh("approve_estimate", { p_project: id }, id);
+  if (r.ok) await tellDesigner(id, "Approved", "The client approved the estimate", "It's in production now. Start when you're ready.");
   return r.ok ? done("Approved. Work has started.") : r;
+}
+
+// Short helper for the designer emails sent from the client side.
+async function tellDesigner(projectId: string, subjectStart: string, heading: string, ...lines: string[]) {
+  const { data: p } = await supabaseAdmin().from("projects").select("number, title, org:orgs(name)").eq("id", projectId).maybeSingle();
+  if (!p) return;
+  const org = p.org as unknown as { name: string } | null;
+  await notifyDesigner(projectId, {
+    subject: `${subjectStart}: ${p.title}`,
+    heading,
+    lines: [`${projectRef(p.number)} ${p.title}, for ${org?.name ?? "your client"}`, ...lines.filter(Boolean)],
+    path: `/app/projects/${projectId}`,
+    button: "Open the project",
+  });
 }
 
 export async function declineEstimate(_prev: ActionState, form: FormData): Promise<ActionState> {
@@ -193,12 +208,14 @@ export async function declineEstimate(_prev: ActionState, form: FormData): Promi
   const note = str(form.get("note"), 2000);
   if (!note) return { ok: false, error: "Say what needs to change in the estimate." };
   const r = await rpcAndRefresh("decline_estimate", { p_project: id, p_note: note }, id);
+  if (r.ok) await tellDesigner(id, "Estimate sent back", "The client wants a different estimate", `What they said: ${note}`);
   return r.ok ? done("Sent back to the studio.") : r;
 }
 
 export async function completeProject(_prev: ActionState, form: FormData): Promise<ActionState> {
   const id = str(form.get("id"), 64);
   const r = await rpcAndRefresh("complete_project", { p_project: id }, id);
+  if (r.ok) await tellDesigner(id, "Completed", "The client marked this project complete", "Nothing more to do on it.");
   return r.ok ? done("Project completed.") : r;
 }
 
@@ -217,10 +234,11 @@ export async function decideFile(input: { deliverableId: string; projectId: stri
     p_note: input.note.slice(0, 5000),
   });
   if (error) return fail(error);
-  const { data: p } = await supabase.from("projects").select("number, title").eq("id", input.projectId).maybeSingle();
-  await notifyStudio(
-    `${input.decision === "approved" ? "Approved" : "Changes requested"}: ${p ? projectRef(p.number) : ""} ${p?.title ?? ""}`,
-    [input.note || "", `${await siteOrigin()}/app/projects/${input.projectId}`].filter(Boolean),
+  await tellDesigner(
+    input.projectId,
+    input.decision === "approved" ? "File approved" : "Changes requested",
+    input.decision === "approved" ? "The client approved a file" : "The client asked for changes",
+    input.note ? `What they said: ${input.note}` : "",
   );
   revalidatePath(`/app/projects/${input.projectId}`);
   return done(input.decision === "approved" ? "Approved." : "Changes sent to the studio.");
@@ -248,8 +266,42 @@ export async function addComment(input: {
     pin_y: clamp(input.pinY),
   });
   if (error) return fail(error);
+  await tellOtherSide(input.projectId, input.orgId, userId, body);
   revalidatePath(`/app/projects/${input.projectId}`);
   return done();
+}
+
+// A message from the client emails the designer; a message from the designer or admin emails the client.
+// One email per person per 10 minutes on a project, so a burst of messages doesn't become a burst of emails.
+async function tellOtherSide(projectId: string, orgId: string, author: string, body: string) {
+  const db = supabaseAdmin();
+  const since = new Date(Date.now() - 10 * 60_000).toISOString();
+  const [{ count }, { data: me }, { data: p }] = await Promise.all([
+    db.from("comments").select("id", { count: "exact", head: true }).eq("project_id", projectId).eq("author", author).gte("created_at", since),
+    db.from("profiles").select("full_name, is_staff, is_talent").eq("id", author).maybeSingle(),
+    db.from("projects").select("number, title").eq("id", projectId).maybeSingle(),
+  ]);
+  if ((count ?? 0) > 1 || !p) return;
+  const excerpt = body.length > 600 ? `${body.slice(0, 600)}…` : body;
+  const ref = `${projectRef(p.number)} ${p.title}`;
+  if (me?.is_staff || me?.is_talent) {
+    await notifyClient(orgId, {
+      subject: `New message: ${p.title}`,
+      heading: "Your designer sent a message",
+      lines: [ref, excerpt],
+      path: `/app/projects/${projectId}`,
+      button: "Reply in Nka",
+    });
+  } else {
+    const first = (me?.full_name ?? "").split(" ")[0] || "The client";
+    await notifyDesigner(projectId, {
+      subject: `New message: ${p.title}`,
+      heading: `${first} sent a message`,
+      lines: [ref, excerpt],
+      path: `/app/projects/${projectId}`,
+      button: "Reply in Nka",
+    });
+  }
 }
 
 export async function addProjectComment(_prev: ActionState, form: FormData): Promise<ActionState> {
@@ -367,12 +419,7 @@ export async function requestResize(_prev: ActionState, form: FormData): Promise
   if (!sizes) return { ok: false, error: "List the sizes or formats you need." };
   const { data, error } = await supabase.rpc("request_resize", { p_deliverable: id, p_sizes: sizes });
   if (error) return fail(error);
-  const m = await getCurrentMembership();
-  await notifyStudio(`Resize request from ${m?.org.name ?? "a client"}`, [
-    `${await siteOrigin()}/app/projects/${data}`,
-    "",
-    sizes,
-  ]);
+  await tellDesigner(String(data), "Resize", "The client wants other sizes of an approved file", `Sizes: ${sizes}`, "Resizes are free and don't use a request slot.");
   revalidatePath("/app", "layout");
   redirect(`/app/projects/${data}?sent=resize`);
 }

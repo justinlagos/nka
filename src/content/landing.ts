@@ -36,7 +36,7 @@ export type ShowKey = keyof typeof SHOW;
 
 export const STATS = [
   { figure: "1 min", label: "Three on-brand options from Instant, made by AI" },
-  { figure: "2 days", label: "Typical first draft from your named designer" },
+  { figure: "2 days", label: "Typical first draft from your lead designer" },
   { figure: "1", label: "Workspace for every brief, file, comment and invoice" },
   { figure: "0", label: "Hiring, notice periods or exit fees" },
 ];
@@ -65,7 +65,7 @@ export const PAINS: {
     img: "/gallery/people/agency.webp",
     ask: "Our last freelancer went quiet halfway through.",
     usual: "Brief someone new from scratch.",
-    fix: "One named designer leads your account and stays.",
+    fix: "One lead designer works on your account and stays.",
     proof: "designer",
     tint: "sky",
   },
@@ -116,7 +116,7 @@ export const OUTCOMES: { id: string; brand: string; title: string; img: string }
 // Who does the work. The photos are illustrations, said so on the page.
 export const PEOPLE: { title: string; body: string; src: string; w: number; h: number; alt: string }[] = [
   {
-    title: "A named lead designer",
+    title: "One lead designer",
     body: "The same senior designer leads your account and learns your brand. No new freelancer every month.",
     src: "/gallery/studio-present.webp",
     w: 1800,
@@ -256,7 +256,7 @@ export const CAPABILITIES: { slug: string; name: string; line: string; img: Show
 
 export const FEATURES = [
   { title: "Brief by talking", body: "Type or say what you need. Nka asks two quick questions at most, then writes the brief." },
-  { title: "Instant or Designer", body: "Three AI options in about a minute, or your named designer with a date shown on send." },
+  { title: "Instant or Designer", body: "Three AI options in about a minute, or your lead designer with a date shown on send." },
   { title: "Review on the file", body: "Click anywhere to pin a comment. Every version kept. Approve in one click." },
   { title: "Brand book from your website", body: "Logo, colours, fonts and tone read from your site and used in every brief." },
   { title: "Dates and spend, live", body: "Agreed dates, on-time record, and budget left, always in view." },

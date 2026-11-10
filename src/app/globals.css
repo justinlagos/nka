@@ -1711,6 +1711,8 @@ textarea:focus {
 }
 
 /* Delivery timing and late flags */
+.stat b.is-late,
+.table td.is-late,
 .proj-meta.is-late {
   color: var(--laterite);
   font-weight: 600;

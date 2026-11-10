@@ -2,7 +2,7 @@ import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { askClaude, jsonFrom } from "@/lib/ai";
 import { generateImage, imagesEnabled, type ImageFailure, type ImageSize } from "@/lib/images";
-import { notifyClient, notifyStudio } from "@/lib/notify";
+import { notifyClient, notifyDesigner, notifyStudio } from "@/lib/notify";
 import { addWorkingDays, ukDate } from "@/lib/ontime";
 import { normaliseBrief, BRIEF_FIELDS } from "@/lib/brief";
 import { date, projectRef } from "@/lib/format";
@@ -63,7 +63,7 @@ Reply with one JSON object only: {"hours": number, "working_days": number, "note
 - working_days: working days until the first draft, assuming the studio starts today. Most single pieces are 2.
 - notes: one or two plain sentences on what's included, for the estimate. British English.`;
 
-export async function sizeAndStart(projectId: string, origin: string) {
+export async function sizeAndStart(projectId: string, origin: string, note?: string) {
   const ctx = await load(projectId);
   if (!ctx) return;
   const { db, p, org } = ctx;
@@ -93,6 +93,22 @@ export async function sizeAndStart(projectId: string, origin: string) {
     p_hours: hours,
     p_due: due,
     p_notes: sized?.notes ?? "",
+  });
+  await notifyDesigner(p.id, {
+    origin,
+    subject: started === true ? `New brief, started: ${p.title}` : `New brief: ${p.title}`,
+    heading: started === true ? "A new brief has started" : p.status === "queued" ? "A new brief is queued" : "A new brief is in",
+    lines: [
+      `${projectRef(p.number)} ${p.title}, for ${org?.name ?? "your client"}`,
+      ...(note ? [note] : []),
+      started === true
+        ? `It's on a plan, so it started straight away. First draft due ${date(due)}.`
+        : p.status === "queued"
+          ? "Their plan's active requests are full, so it starts by itself when one finishes."
+          : `Nka suggests a first draft by ${date(due)}. Confirm the date, or ask the client a question in the project.`,
+    ],
+    path: `/app/projects/${p.id}`,
+    button: "Open the brief",
   });
   if (started === true) {
     await notifyClient(p.org_id, {
@@ -213,14 +229,15 @@ export async function makeImages(projectId: string, mode: "concepts" | "instant"
       })
       .eq("id", projectId);
     await db.from("project_events").insert({ project_id: p.id, org_id: p.org_id, kind: "instant_failed", detail: { reason } });
-    await notifyStudio(`Instant brief needs a designer: ${projectRef(p.number)} ${p.title}`, [
+    // A problem for the admin (the image service), and new work for the designer.
+    await notifyStudio(`Instant failed, sent to the designer: ${projectRef(p.number)} ${p.title}`, [
       reason === "quota"
         ? "The image service account has run out of credit. Add credit at platform.openai.com/settings/organization/billing."
         : "The image service didn't return any options.",
       `${origin}/app/projects/${p.id}`,
     ]);
     // Carry on exactly as if they had picked Designer: date it and start it if the plan allows.
-    await sizeAndStart(projectId, origin);
+    await sizeAndStart(projectId, origin, "The client asked for Instant, which couldn't make options this time, so this one is yours.");
     return;
   }
   await db.from("deliverables").insert(

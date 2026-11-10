@@ -15,6 +15,7 @@ const STATUS_CHOICES = [
 export async function StaffPanel({
   project,
   staff,
+  admin = true,
 }: {
   project: {
     id: string;
@@ -26,26 +27,36 @@ export async function StaffPanel({
     suggested?: { hours: number | null; due: string | null; amount: number | null; notes: string } | null;
   };
   staff: { id: string; full_name: string; email: string }[];
+  // false for a designer: no prices, no reassigning, no cancelling.
+  admin?: boolean;
 }) {
   const supabase = await supabaseServer();
   const { data } = await supabase.from("deliverables").select("title").eq("project_id", project.id);
   const titles = [...new Set((data ?? []).map((d) => d.title as string))];
   const onPlan = ["starter", "growth", "studio"].includes(project.plan);
+  const choices = admin ? STATUS_CHOICES : STATUS_CHOICES.filter(([v]) => !["submitted", "cancelled"].includes(v));
 
   return (
     <section className="panel" style={{ borderColor: "var(--ochre)", borderWidth: 2 }}>
-      <h2>Studio controls</h2>
+      <h2>{admin ? "Studio controls" : "Your controls"}</h2>
 
       {["submitted", "awaiting_approval"].includes(project.status) && (
         <details open={project.status === "submitted"} style={{ marginBottom: 14 }}>
           <summary className="label" style={{ cursor: "pointer" }}>
-            {project.status === "awaiting_approval" ? "Revise estimate" : "Send estimate"}
+            {!admin ? (onPlan ? "Confirm the date" : "Propose a date") : project.status === "awaiting_approval" ? "Revise estimate" : "Send estimate"}
           </summary>
-          <ActionForm action={sendEstimate} submit={onPlan ? "Confirm and start" : "Send estimate"} pending="Sending" buttonClass="btn btn-small">
+          <ActionForm
+            action={sendEstimate}
+            submit={onPlan ? "Confirm and start" : admin ? "Send estimate" : "Send to Nka to price"}
+            pending="Sending"
+            buttonClass="btn btn-small"
+          >
             <input type="hidden" name="id" value={project.id} />
             {project.suggested?.due && <p className="small muted">Pre-filled by Nka from the brief. Check it, change anything, then send.</p>}
             {onPlan ? (
-              <p className="small muted">Plan client: the amount isn&apos;t charged; work starts as soon as you confirm.</p>
+              <p className="small muted">Plan client: nothing extra to pay; work starts as soon as you confirm.</p>
+            ) : !admin ? (
+              <p className="small muted">This client isn&apos;t on a paid-up plan. Nka adds the price, then sends it to them.</p>
             ) : (
               <label className="field">
                 <span>Amount ({project.currency.toUpperCase()})</span>
@@ -85,6 +96,7 @@ export async function StaffPanel({
         </details>
       )}
 
+      {admin && (
       <details style={{ marginBottom: 14 }}>
         <summary className="label" style={{ cursor: "pointer" }}>
           Assign designer
@@ -104,6 +116,7 @@ export async function StaffPanel({
           </label>
         </ActionForm>
       </details>
+      )}
 
       <details>
         <summary className="label" style={{ cursor: "pointer" }}>
@@ -114,7 +127,7 @@ export async function StaffPanel({
           <label className="field">
             <span className="skip">Stage</span>
             <select name="status" defaultValue={project.status}>
-              {STATUS_CHOICES.map(([v, l]) => (
+              {choices.map(([v, l]) => (
                 <option key={v} value={v}>
                   {l}
                 </option>

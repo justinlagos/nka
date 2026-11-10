@@ -58,7 +58,7 @@ export const PLANS: Plan[] = [
       "Four requests in progress at a time",
       "Everything in Growth",
       "Brand identity, event branding, web and product design",
-      "A named creative director and kickoff calls on request",
+      "A creative director and kickoff calls on request",
     ],
   },
 ];

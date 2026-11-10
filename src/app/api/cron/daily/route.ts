@@ -1,13 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { serverEnv } from "@/lib/env";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { notifyClient, notifyStudio } from "@/lib/notify";
+import { notifyClient, notifyDirect, notifyStudio } from "@/lib/notify";
 import { siteOrigin } from "@/lib/origin";
 import { date, projectRef } from "@/lib/format";
 import { ukDate } from "@/lib/ontime";
 
-// Runs each weekday morning (vercel.json). Reminds clients about anything waiting on them for
-// two days or more, and sends the studio one list of what's late or still needs an estimate.
+// Runs each weekday morning (vercel.json). Reminds clients about anything waiting on them for two days
+// or more, sends each designer their own list (late, due today, changes asked, needs a date), and sends
+// the admin one list of problems (late by designer, needs a price, no date, no designer).
 export async function GET(request: NextRequest) {
   const { cronSecret } = serverEnv();
   if (!cronSecret || request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
@@ -38,20 +39,65 @@ export async function GET(request: NextRequest) {
     await db.from("projects").update({ last_nudged_at: new Date().toISOString() }).eq("id", p.id);
   }
 
-  const [{ data: late }, { data: unestimated }] = await Promise.all([
-    db
-      .from("projects")
-      .select("id, number, title, estimate_due")
-      .in("status", ["submitted", "in_progress", "changes_requested"])
-      .lt("estimate_due", today)
-      .limit(100),
-    db.from("projects").select("id, number, title").eq("status", "submitted").is("estimate_due", null).lt("submitted_at", oneDayAgo).limit(100),
+  // Each designer: their own list for the day. The admin: problems only.
+  const open = ["submitted", "in_progress", "changes_requested", "awaiting_approval", "in_review"];
+  const [{ data: work }, { data: designers }, { data: orgs }] = await Promise.all([
+    db.from("projects").select("id, number, title, status, estimate_due, estimate_sent_at, submitted_at, assignee, org:orgs(name, lead_id)").in("status", open).limit(1000),
+    db.from("profiles").select("id, email, full_name, alias, is_talent, is_staff").or("is_talent.eq.true,is_staff.eq.true"),
+    db.from("orgs").select("id, name, lead_id"),
   ]);
-  if ((late?.length ?? 0) + (unestimated?.length ?? 0) > 0) {
-    await notifyStudio(`Studio today: ${late?.length ?? 0} late, ${unestimated?.length ?? 0} waiting for an estimate`, [
-      ...(late ?? []).map((p) => `LATE (due ${date(p.estimate_due)}): ${projectRef(p.number)} ${p.title}  ${origin}/app/projects/${p.id}`),
-      ...(unestimated ?? []).map((p) => `NEEDS ESTIMATE: ${projectRef(p.number)} ${p.title}  ${origin}/app/projects/${p.id}`),
+  type Row = { id: string; number: number; title: string; status: string; estimate_due: string | null; estimate_sent_at: string | null; submitted_at: string | null; assignee: string | null; org: { name: string; lead_id: string | null } | null };
+  const rows = (work ?? []) as unknown as Row[];
+  const owner = (r: Row) => r.assignee ?? r.org?.lead_id ?? null;
+  const link = (r: Row) => `${origin}/app/projects/${r.id}`;
+  const line = (r: Row) => `${projectRef(r.number)} ${r.title} (${r.org?.name ?? ""})`;
+  const isLate = (r: Row) => ["submitted", "in_progress", "changes_requested"].includes(r.status) && !!r.estimate_due && r.estimate_due < today;
+  const needsDate = (r: Row) => r.status === "submitted" && !r.estimate_due && (r.submitted_at ?? "") < oneDayAgo;
+  const needsPrice = (r: Row) => r.status === "submitted" && !!r.estimate_due && !r.estimate_sent_at;
+
+  let designerEmails = 0;
+  for (const d of (designers ?? []).filter((x) => x.is_talent && !x.is_staff)) {
+    const mine = rows.filter((r) => owner(r) === d.id);
+    const late = mine.filter(isLate);
+    const dueToday = mine.filter((r) => r.estimate_due === today && ["in_progress", "changes_requested"].includes(r.status));
+    const changes = mine.filter((r) => r.status === "changes_requested" && !isLate(r));
+    const dates = mine.filter((r) => r.status === "submitted" && !r.estimate_due);
+    if (!late.length && !dueToday.length && !changes.length && !dates.length) continue;
+    await notifyDesignerDigest(d.email, origin, [
+      ...late.map((r) => `LATE (was due ${date(r.estimate_due)}): ${line(r)}  ${link(r)}`),
+      ...dueToday.map((r) => `DUE TODAY: ${line(r)}  ${link(r)}`),
+      ...changes.map((r) => `CHANGES ASKED: ${line(r)}  ${link(r)}`),
+      ...dates.map((r) => `NEEDS A DATE: ${line(r)}  ${link(r)}`),
+    ], late.length);
+    designerEmails++;
+  }
+
+  const name = new Map((designers ?? []).map((d) => [d.id, d.full_name || d.email]));
+  const late = rows.filter(isLate);
+  const noDate = rows.filter(needsDate);
+  const noPrice = rows.filter(needsPrice);
+  const unassigned = (orgs ?? []).filter((o) => !o.lead_id);
+  const byDesigner = new Map<string, number>();
+  for (const r of late) byDesigner.set(name.get(owner(r) ?? "") ?? "Nobody", (byDesigner.get(name.get(owner(r) ?? "") ?? "Nobody") ?? 0) + 1);
+  const problems = late.length + noDate.length + noPrice.length + unassigned.length;
+  if (problems > 0) {
+    await notifyStudio(`Nka today: ${late.length} late, ${noPrice.length} to price, ${noDate.length} without a date, ${unassigned.length} without a designer`, [
+      ...(byDesigner.size ? ["Late by designer: " + [...byDesigner].map(([n, c]) => `${n} ${c}`).join(", "), ""] : []),
+      ...late.map((r) => `LATE (due ${date(r.estimate_due)}, ${name.get(owner(r) ?? "") ?? "nobody"}): ${line(r)}  ${link(r)}`),
+      ...noPrice.map((r) => `NEEDS A PRICE: ${line(r)}  ${link(r)}`),
+      ...noDate.map((r) => `NO DATE AFTER A DAY (${name.get(owner(r) ?? "") ?? "nobody"}): ${line(r)}  ${link(r)}`),
+      ...unassigned.map((o) => `NO DESIGNER: ${o.name}  ${origin}/admin/clients/${o.id}`),
     ]);
   }
-  return NextResponse.json({ reminded: waiting?.length ?? 0, late: late?.length ?? 0, unestimated: unestimated?.length ?? 0 });
+  return NextResponse.json({ reminded: waiting?.length ?? 0, designers: designerEmails, problems });
+}
+
+async function notifyDesignerDigest(email: string, origin: string, lines: string[], late: number) {
+  await notifyDirect(email, {
+    subject: late ? `Today: ${late} late` : "Today on Nka",
+    heading: "Your work today",
+    lines,
+    link: `${origin}/studio`,
+    button: "Open your work",
+  });
 }

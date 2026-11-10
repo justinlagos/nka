@@ -2,8 +2,19 @@ import Link from "next/link";
 import { ProjectList, type ProjectRow } from "@/components/ProjectList";
 import { requireStaff } from "@/lib/session";
 
-const LANES: { title: string; hint: string; statuses: string[] }[] = [
-  { title: "Needs an estimate", hint: "New briefs. Read, ask questions, send an estimate or start date.", statuses: ["submitted"] },
+const LANES: { title: string; hint: string; statuses: string[]; pick?: (r: { estimate_due: string | null }) => boolean }[] = [
+  {
+    title: "Needs a price",
+    hint: "The designer proposed a date for a client who isn't on a paid-up plan. Add the price and send it.",
+    statuses: ["submitted"],
+    pick: (r) => !!r.estimate_due,
+  },
+  {
+    title: "Needs a date",
+    hint: "New briefs. The designer confirms the date; step in if it's been more than a working day.",
+    statuses: ["submitted"],
+    pick: (r) => !r.estimate_due,
+  },
   { title: "Changes requested", hint: "The client has asked for changes.", statuses: ["changes_requested"] },
   { title: "In production", hint: "Approved and being made.", statuses: ["in_progress"] },
   { title: "With the client", hint: "Waiting for an estimate approval or a file review.", statuses: ["awaiting_approval", "in_review"] },
@@ -29,7 +40,10 @@ export default async function StudioQueue() {
       <div className="app-head">
         <div>
           <h1>Studio queue</h1>
-          <p className="muted">Oldest first within each lane. {rows.length} open projects across all clients.</p>
+          <p className="muted">
+            Oldest first within each lane. {rows.length} open projects across all clients. Designers and how they&apos;re delivering:{" "}
+            <Link href="/admin/designers">Designers</Link>.
+          </p>
         </div>
       </div>
       {rows.length === 0 && (
@@ -47,7 +61,7 @@ export default async function StudioQueue() {
         </section>
       )}
       {LANES.map((lane) => {
-        const laneRows = rows.filter((r) => lane.statuses.includes(r.status));
+        const laneRows = rows.filter((r) => lane.statuses.includes(r.status) && (!lane.pick || lane.pick(r)));
         return (
           <section className="panel" key={lane.title}>
             <h2>

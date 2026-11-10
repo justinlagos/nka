@@ -143,7 +143,7 @@ export default async function WorkspaceHome() {
                 )}
               </>
             ) : (
-              <p className="small muted">The studio names one designer for your account before your first brief starts. You&apos;ll see them here.</p>
+              <p className="small muted">Nka gives your account one lead designer before your first brief starts. You&apos;ll see them here.</p>
             )}
           </section>
           <section className="panel">
