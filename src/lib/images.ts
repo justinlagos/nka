@@ -16,7 +16,7 @@ export async function generateImage(
   size: ImageSize = "1024x1024",
   why?: (f: ImageFailure) => void,
 ): Promise<Uint8Array | null> {
-  const { openaiKey, imageModel } = serverEnv();
+  const { openaiKey, imageModel, imageQuality } = serverEnv();
   if (!openaiKey) {
     why?.("off");
     return null;
@@ -25,7 +25,7 @@ export async function generateImage(
     const res = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
       headers: { authorization: `Bearer ${openaiKey}`, "content-type": "application/json" },
-      body: JSON.stringify({ model: imageModel, prompt: prompt.slice(0, 3900), size, n: 1 }),
+      body: JSON.stringify({ model: imageModel, prompt: prompt.slice(0, 3900), size, quality: imageQuality, n: 1 }),
       signal: AbortSignal.timeout(150_000),
     });
     if (!res.ok) {
