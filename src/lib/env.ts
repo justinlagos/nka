@@ -20,6 +20,8 @@ export function serverEnv() {
     resendKey: process.env.RESEND_API_KEY ?? "",
     openaiKey: process.env.OPENAI_API_KEY ?? "",
     imageModel: process.env.IMAGE_MODEL || "gpt-image-2",
+    // low | medium | high. Medium keeps Instant at roughly a quarter of the high-quality cost.
+    imageQuality: process.env.IMAGE_QUALITY || "medium",
     cronSecret: process.env.CRON_SECRET ?? "",
     fromEmail: process.env.NKA_FROM_EMAIL || "Nka Studio <nka.studio@motionplaylabs.com>",
     notifyEmail: process.env.NKA_NOTIFY_EMAIL ?? "",
