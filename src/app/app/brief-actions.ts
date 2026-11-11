@@ -1,6 +1,7 @@
 "use server";
 import { after } from "next/server";
 import { redirect } from "next/navigation";
+import { onPlan } from "@/lib/plans";
 import { revalidatePath } from "next/cache";
 import { done, fail, type ActionState } from "@/lib/action";
 import { getCurrentMembership, requireProfile } from "@/lib/session";
@@ -114,6 +115,16 @@ export async function sendBrief(projectId: string, lane: "designer" | "instant")
     const { error } = await supabase.rpc("start_instant", { p_project: projectId });
     if (error) return { ok: false, error: fail(error).error };
   } else {
+    // Work by the team runs on plan hours. Without a plan, the brief stays a draft until one starts.
+    const { data: p } = await supabase.from("projects").select("org:orgs(plan, plan_status)").eq("id", projectId).maybeSingle();
+    const org = (p?.org ?? null) as unknown as { plan: string; plan_status: string } | null;
+    if (org && org.plan !== "bespoke" && !onPlan(org.plan, org.plan_status)) {
+      return {
+        ok: false,
+        error: "Your team works from a plan. Pick one in Billing and send this again; your brief is saved.",
+        path: "/app/billing",
+      };
+    }
     const { error } = await supabase.rpc("submit_project", { p_project: projectId });
     if (error) return { ok: false, error: fail(error).error };
   }
@@ -141,7 +152,7 @@ export async function finishWithDesigner(_prev: ActionState, form: FormData): Pr
   });
   if (error) return fail(error);
   const r = await sendBrief(String(data), "designer");
-  if (!r.ok) redirect(`/app/projects/${data}/edit`);
+  if (!r.ok) redirect(r.path ?? `/app/projects/${data}/edit`);
   redirect(r.path!);
 }
 

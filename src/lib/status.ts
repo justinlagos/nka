@@ -21,17 +21,22 @@ export const STATUS: Record<ProjectStatus, { label: string; client: string; admi
   },
   submitted: {
     label: "Brief received",
-    client: "The studio is reading your brief and planning the work.",
-    admin: "Waiting for the designer to confirm or propose a date.",
+    client: "Your team is reading your brief and planning the work.",
+    admin: "Waiting for the designer to confirm the date and hours, or for team hours.",
     tone: "ink",
   },
   awaiting_approval: {
-    label: "Estimate to approve",
-    client: "Check the estimate below. Work starts when an owner or admin approves it.",
-    admin: "Estimate sent. Waiting for the client to approve it.",
+    label: "Quote to approve",
+    client: "Check the quote below. Work starts when an owner or admin approves it.",
+    admin: "Bespoke quote sent. Waiting for the client to approve it.",
     tone: "ochre",
   },
-  in_progress: { label: "In production", client: "Your designer is working on it.", admin: "With the designer.", tone: "ink" },
+  in_progress: {
+    label: "In production",
+    client: "Your team is working on it. Nka checks every version before you see it.",
+    admin: "With the team. Versions wait for Nka review before the client sees them.",
+    tone: "ink",
+  },
   in_review: {
     label: "Ready for review",
     client: "New files are ready. Approve them or ask for changes.",
@@ -40,7 +45,7 @@ export const STATUS: Record<ProjectStatus, { label: string; client: string; admi
   },
   changes_requested: {
     label: "Changes requested",
-    client: "The studio is working on your changes.",
+    client: "Your team is working on your changes.",
     admin: "The client asked for changes. The designer is on them.",
     tone: "laterite",
   },
@@ -48,11 +53,13 @@ export const STATUS: Record<ProjectStatus, { label: string; client: string; admi
   cancelled: { label: "Cancelled", client: "This project was stopped.", admin: "Cancelled.", tone: "quiet" },
 };
 
-// Stages shown as a line on each project. Queued and cancelled sit outside it.
-export const STAGES: ProjectStatus[] = ["submitted", "awaiting_approval", "in_progress", "in_review", "completed"];
+// Stages shown as a line on each project. Queued and cancelled sit outside it. Plan work has no
+// price step; a Bespoke quote waiting for approval sits on the first stage.
+export const STAGES: ProjectStatus[] = ["submitted", "in_progress", "in_review", "completed"];
 
 export function stageIndex(status: ProjectStatus): number {
   if (status === "changes_requested") return STAGES.indexOf("in_review");
+  if (status === "awaiting_approval") return STAGES.indexOf("submitted");
   return STAGES.indexOf(status);
 }
 

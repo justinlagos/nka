@@ -5,6 +5,7 @@ import { notifyClient, notifyDirect, notifyStudio } from "@/lib/notify";
 import { siteOrigin } from "@/lib/origin";
 import { date, projectRef } from "@/lib/format";
 import { ukDate } from "@/lib/ontime";
+import { startWaitingBriefs } from "@/lib/automation";
 
 // Runs each weekday morning (vercel.json). Reminds clients about anything waiting on them for two days
 // or more, sends each designer their own list (late, due today, changes asked, needs a date), and sends
@@ -19,6 +20,9 @@ export async function GET(request: NextRequest) {
   const twoDaysAgo = new Date(Date.now() - 2 * 86_400_000).toISOString();
   const oneDayAgo = new Date(Date.now() - 86_400_000).toISOString();
   const today = ukDate(new Date());
+
+  // A new month renews plan hours: briefs that were waiting for hours start now.
+  const startedWaiting = await startWaitingBriefs(null, origin);
 
   const { data: waiting } = await db
     .from("projects")
@@ -41,11 +45,14 @@ export async function GET(request: NextRequest) {
 
   // Each designer: their own list for the day. The admin: problems only.
   const open = ["submitted", "in_progress", "changes_requested", "awaiting_approval", "in_review"];
-  const [{ data: work }, { data: people }, { data: orgs }] = await Promise.all([
-    db.from("projects").select("id, number, title, status, estimate_due, estimate_sent_at, submitted_at, assignee, org:orgs(name, lead_id)").in("status", open).limit(1000),
+  const [{ data: work }, { data: people }, { data: orgs }, { data: inReview }, { data: waitingHours }] = await Promise.all([
+    db.from("projects").select("id, number, title, status, estimate_due, estimate_sent_at, estimate_hours, submitted_at, assignee, org:orgs(name, lead_id)").in("status", open).limit(1000),
     db.from("profiles").select("*").or("is_talent.eq.true,is_staff.eq.true"),
     db.from("orgs").select("id, name, lead_id"),
+    db.from("deliverables").select("id, title, version, project_id, created_at").eq("status", "internal_review").lt("created_at", oneDayAgo).limit(200),
+    db.from("project_events").select("project_id").eq("kind", "waiting_for_hours").limit(1000),
   ]);
+  const waitsForHours = new Set((waitingHours ?? []).map((e) => e.project_id as string));
   // Before migration 0012 there are no designers: the admin only.
   const designers = (people ?? (await db.from("profiles").select("*").eq("is_staff", true)).data ?? []) as {
     id: string;
@@ -61,7 +68,7 @@ export async function GET(request: NextRequest) {
   const adminLink = (r: Row) => `${origin}/admin/projects/${r.id}`;
   const line = (r: Row) => `${projectRef(r.number)} ${r.title} (${r.org?.name ?? ""})`;
   const isLate = (r: Row) => ["submitted", "in_progress", "changes_requested"].includes(r.status) && !!r.estimate_due && r.estimate_due < today;
-  const needsDate = (r: Row) => r.status === "submitted" && !r.estimate_due && (r.submitted_at ?? "") < oneDayAgo;
+  const needsDate = (r: Row) => r.status === "submitted" && !r.estimate_due && !waitsForHours.has(r.id) && (r.submitted_at ?? "") < oneDayAgo;
   const needsPrice = (r: Row) => r.status === "submitted" && !!r.estimate_due && !r.estimate_sent_at;
 
   let designerEmails = 0;
@@ -88,9 +95,11 @@ export async function GET(request: NextRequest) {
   const unassigned = (orgs ?? []).filter((o) => !o.lead_id);
   const byDesigner = new Map<string, number>();
   for (const r of late) byDesigner.set(name.get(owner(r) ?? "") ?? "Nobody", (byDesigner.get(name.get(owner(r) ?? "") ?? "Nobody") ?? 0) + 1);
-  const problems = late.length + noDate.length + noPrice.length + unassigned.length;
+  const review = (inReview ?? []) as { id: string; title: string; version: number; project_id: string }[];
+  const problems = late.length + noDate.length + noPrice.length + unassigned.length + review.length;
   if (problems > 0) {
-    await notifyStudio(`Nka today: ${late.length} late, ${noPrice.length} to price, ${noDate.length} without a date, ${unassigned.length} without a designer`, [
+    await notifyStudio(`Nka today: ${late.length} late, ${review.length} waiting for review, ${noPrice.length} to price, ${noDate.length} without a date, ${unassigned.length} without a designer`, [
+      ...review.map((d) => `WAITING FOR NKA REVIEW OVER A DAY: ${d.title} v${d.version}  ${origin}/admin/projects/${d.project_id}`),
       ...(byDesigner.size ? ["Late by designer: " + [...byDesigner].map(([n, c]) => `${n} ${c}`).join(", "), ""] : []),
       ...late.map((r) => `LATE (due ${date(r.estimate_due)}, ${name.get(owner(r) ?? "") ?? "nobody"}): ${line(r)}  ${adminLink(r)}`),
       ...noPrice.map((r) => `NEEDS A PRICE: ${line(r)}  ${adminLink(r)}`),
@@ -98,7 +107,7 @@ export async function GET(request: NextRequest) {
       ...unassigned.map((o) => `NO DESIGNER: ${o.name}  ${origin}/admin/clients/${o.id}`),
     ]);
   }
-  return NextResponse.json({ reminded: waiting?.length ?? 0, designers: designerEmails, problems });
+  return NextResponse.json({ reminded: waiting?.length ?? 0, designers: designerEmails, problems, startedWaiting });
 }
 
 async function notifyDesignerDigest(email: string, origin: string, lines: string[], late: number) {

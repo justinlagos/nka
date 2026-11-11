@@ -88,6 +88,11 @@ export async function startDemo(_prev: DemoState, form: FormData): Promise<DemoS
   if (!sent.ok) return err(`Your answers are saved. ${sent.error}`, d.email);
   // A sign-in link opened in this browser comes back to finish the setup.
   (await cookies()).set("nka_next", "/demo/ready", { path: "/", httpOnly: true, sameSite: "lax", secure: true, maxAge: 3600 });
+  // A plan picked on the pricing page is offered again once the workspace is ready.
+  const choice = clip(form.get("plan_choice"), 40);
+  if (/^(instant|starter|growth|studio)\|(usd|ngn|gbp)\|(month|year)$/.test(choice)) {
+    (await cookies()).set("nka_plan", choice, { path: "/", httpOnly: true, sameSite: "lax", secure: true, maxAge: 86400 });
+  }
   return { ok: true, email: d.email, at: Date.now() };
 }
 

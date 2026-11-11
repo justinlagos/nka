@@ -36,57 +36,61 @@ export const STEPS = [
 // the workspace so a client can check it, not just read it.
 export const PROMISES: { title: string; body: string; how: string }[] = [
   {
-    title: "One designer who knows your brand",
-    body: "Not whoever is free this week. One lead designer works on your account and on every brief.",
-    how: "The same designer every time. If that ever changes, you get a written handover first.",
+    title: "One team that knows your brand",
+    body: "Not whoever is free this week. One team, the same people every time, on every brief.",
+    how: "If someone ever changes, you get a written handover first.",
   },
   {
-    title: "Prices that don't creep",
-    body: "Anything priced is priced before work starts. If it takes us longer than we said, that's our cost.",
-    how: "The approved price is locked in your workspace. It can't change without your sign-off.",
+    title: "A price list, not a quote",
+    body: "Fixed monthly prices, the same everywhere, in dollars, naira or pounds. No per-brief pricing.",
+    how: "Each brief shows the team hours it uses before it starts. If it takes us longer, that's our cost.",
   },
   {
-    title: "Resizes are free",
-    body: "Need the same design as a story, a banner and a print PDF? That's included, every time.",
-    how: "Ask from your library. It goes straight to your designer and doesn't use a request slot.",
+    title: "Checked before you see it",
+    body: "Every version is checked by Nka before it reaches you. Generic or unedited AI work is sent back.",
+    how: "Drafts appear in your workspace only after they pass.",
   },
   {
     title: "Dates you can check",
-    body: "Every project gets a delivery date. We show you whether we hit it.",
-    how: "Each project shows the agreed date and the day files arrived. Your on-time record is on your home page.",
+    body: "Every brief gets a delivery date. Miss the first draft date and that brief's hours come back to you.",
+    how: "Each project shows the date and the day files arrived. Your on-time record is on your home page.",
+  },
+  {
+    title: "Resizes are free",
+    body: "Need the same design as a story, a banner and a print PDF? That's included.",
+    how: "Ask from your library. It doesn't use team hours or a request slot.",
   },
   {
     title: "Leave when you like",
-    body: "Monthly. No notice period, no exit fee, no chasing. You keep everything we made for you.",
+    body: "No notice period, no exit fee, no chasing. You keep everything we made for you.",
     how: "Cancel or pause from Billing in your workspace. Pausing stops charges for up to a month.",
-  },
-  {
-    title: "Unused budget is yours",
-    body: "On Flex, budget you don't use carries over. If you leave, we pay back what's left.",
-    how: "Budget, spend and what's left are shown live, with every entry listed.",
   },
 ];
 
 export const FAQ: { q: string; a: string }[] = [
   {
     q: "How much does it cost?",
-    a: "It depends on how much design you need running at once, so we agree it on a short call. You'll get a monthly figure in writing before you pay anything, and it won't change without your agreement.",
+    a: "Instant is $19 a month, Starter $149, Growth $399 and Studio $999, or the same value in naira or pounds. Yearly is 12 months for the price of 10. Websites, rebrands and launches are Bespoke, quoted after a call.",
   },
   {
-    q: "What counts as one request?",
-    a: "One clear piece of work: a deck, a report layout, a set of social posts for one campaign. Big jobs like a full identity are split into stages. Other sizes and formats of finished work don't count.",
+    q: "What are team hours?",
+    a: "Each plan has a monthly pool of hours that anyone on your team can use: 1 on Instant, 8 on Starter, 20 on Growth, 40 on Studio. When you send a brief you see the hours it uses, and that number is fixed. Unused hours carry into next month. Need more? Add 5 hours in one click.",
+  },
+  {
+    q: "Who is on my team?",
+    a: "Starter gives you a designer and a copywriter. Growth adds a creative lead who sets the look and approves every piece. Studio adds a marketing lead who plans the month with you, and motion. The same people every time.",
   },
   {
     q: "How fast is it?",
-    a: "Most requests get a first draft in about 2 working days. Larger work gets a dated plan before anything starts, and you can see if we're on time.",
+    a: "Small briefs get a first draft in 2 working days, medium ones in 3, and large ones by the date shown when you send them. If a first draft is late, that brief's hours come back to you.",
   },
   {
     q: "What if we don't like the first draft?",
-    a: "Comment on the file itself and we revise until it meets the brief. If a draft misses the brief, tell us; your designer redoes it and it doesn't count against you.",
+    a: "Comment on the file itself and we revise until it meets the brief. Revisions don't use extra hours.",
   },
   {
     q: "Who does the work?",
-    a: "One lead designer works on your account. The studio is led by Justin Ukaegbu, a brand and communication designer with more than ten years in agencies and in-house. Specialists join for motion, illustration or development when a project needs them, under your lead designer.",
+    a: "Designers, copywriters and leads working for Nka through partner studios, matched to your market. The studio is led by Justin Ukaegbu, a brand and communication designer with more than ten years in agencies and in-house. Your contract is with Nka, and Nka checks every version before you see it.",
   },
   {
     q: "Can we pause or cancel?",
@@ -94,11 +98,11 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "We're in Nigeria. Can we pay?",
-    a: "Yes. We take any major debit or credit card through Stripe. If you'd rather be invoiced, or pay in naira, say so on the demo call.",
+    a: "Yes. Plans are priced in naira and charged in naira by any major card through Stripe, so you see one fixed figure. Kenya, Ghana and the rest of Africa pay in dollars.",
   },
   {
     q: "Do you use AI?",
-    a: "Where it helps and you allow it: drafting briefs, early concepts, resizing. Every file is designed and checked by a person. You can turn AI off for any project.",
+    a: "For Instant briefs and early directions, and to help write briefs. Work from your team is made by people and checked by Nka; no unedited AI output is delivered as finished work. You can turn AI off for any project.",
   },
   {
     q: "Who owns the work?",

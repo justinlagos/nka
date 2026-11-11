@@ -9,9 +9,9 @@ import { draftBrief } from "@/lib/ai";
 import { notifyClient, notifyDesigner } from "@/lib/notify";
 import { sendBrief } from "./brief-actions";
 import { siteOrigin } from "@/lib/origin";
-import { getStripe, priceForPlan } from "@/lib/stripe";
+import { getStripe, priceForPlan, priceForTopUp } from "@/lib/stripe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { planById, type PlanId } from "@/lib/plans";
+import { TOP_UP, hasCardPlan, isCurrency, onPlan, planById, type Currency, type Interval, type PlanId } from "@/lib/plans";
 import { projectRef } from "@/lib/format";
 
 const str = (v: FormDataEntryValue | null, n = 4000) => String(v ?? "").trim().slice(0, n);
@@ -433,22 +433,28 @@ export async function startCheckout(_prev: ActionState, form: FormData): Promise
   if (m.role !== "owner" && m.role !== "admin") return { ok: false, error: "Only an owner or admin can change the plan." };
   const plan = planById(str(form.get("plan"), 20));
   if (!plan) return { ok: false, error: "Choose a plan." };
+  if (hasCardPlan(m.org.plan, m.org.plan_status) && m.org.stripe_subscription_id) {
+    return { ok: false, error: "You already have a plan. Use Manage your plan to change it." };
+  }
+  const interval: Interval = str(form.get("interval"), 10) === "year" ? "year" : "month";
+  const cur = str(form.get("currency"), 3);
+  const currency: Currency = isCurrency(cur) ? cur : "usd";
   const stripe = getStripe();
   if (!stripe) return { ok: false, error: "Card payments aren't switched on yet. Message the studio and we'll set your plan up." };
 
   let url: string | null = null;
   try {
-    const price = await priceForPlan(stripe, plan.id as PlanId);
+    const price = await priceForPlan(stripe, plan.id as PlanId, interval);
     if (!price) return { ok: false, error: `The ${plan.name} price isn't set up in Stripe yet.` };
     const origin = await siteOrigin();
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price, quantity: 1 }],
+      currency,
       client_reference_id: m.org.id,
       ...(m.org.stripe_customer_id ? { customer: m.org.stripe_customer_id } : { customer_email: profile.email }),
-      subscription_data: { metadata: { org_id: m.org.id, plan: plan.id } },
-      metadata: { org_id: m.org.id, plan: plan.id },
-      allow_promotion_codes: true,
+      subscription_data: { metadata: { org_id: m.org.id, plan: plan.id, interval } },
+      metadata: { org_id: m.org.id, plan: plan.id, interval },
       billing_address_collection: "required",
       success_url: `${origin}/app/billing?checkout=done`,
       cancel_url: `${origin}/app/billing?checkout=cancelled`,
@@ -456,7 +462,42 @@ export async function startCheckout(_prev: ActionState, form: FormData): Promise
     url = session.url;
   } catch (err) {
     console.error("Checkout failed", err);
-    return { ok: false, error: "Stripe couldn't start checkout. Try again, or book a call." };
+    return { ok: false, error: "Stripe couldn't start checkout. Try again, or message the studio." };
+  }
+  if (!url) return { ok: false, error: "Stripe couldn't start checkout." };
+  redirect(url);
+}
+
+// 5 extra team hours, paid once. The webhook adds them and starts any brief that was waiting.
+export async function buyHours(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const { profile } = await requireProfile();
+  const m = await getCurrentMembership();
+  if (!m) return { ok: false, error: "No organisation selected." };
+  if (m.role !== "owner" && m.role !== "admin") return { ok: false, error: "Only an owner or admin can buy hours." };
+  if (!onPlan(m.org.plan, m.org.plan_status)) return { ok: false, error: "Extra hours go with a plan. Start a plan first." };
+  const cur = str(form.get("currency"), 3);
+  const currency: Currency = isCurrency(cur) ? cur : isCurrency(m.org.currency) ? m.org.currency : "usd";
+  const stripe = getStripe();
+  if (!stripe) return { ok: false, error: "Card payments aren't switched on yet." };
+  let url: string | null = null;
+  try {
+    const price = await priceForTopUp(stripe);
+    if (!price) return { ok: false, error: "The extra hours price isn't set up in Stripe yet." };
+    const origin = await siteOrigin();
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [{ price, quantity: 1 }],
+      currency,
+      client_reference_id: m.org.id,
+      ...(m.org.stripe_customer_id ? { customer: m.org.stripe_customer_id } : { customer_email: profile.email }),
+      metadata: { org_id: m.org.id, kind: "top_up", hours: String(TOP_UP.hours) },
+      success_url: `${origin}/app/billing?hours=done`,
+      cancel_url: `${origin}/app/billing?checkout=cancelled`,
+    });
+    url = session.url;
+  } catch (err) {
+    console.error("Top-up checkout failed", err);
+    return { ok: false, error: "Stripe couldn't start checkout. Try again shortly." };
   }
   if (!url) return { ok: false, error: "Stripe couldn't start checkout." };
   redirect(url);

@@ -36,7 +36,7 @@ export type ShowKey = keyof typeof SHOW;
 
 export const STATS = [
   { figure: "1 min", label: "Three on-brand options from Instant, made by AI" },
-  { figure: "2 days", label: "Typical first draft from your lead designer" },
+  { figure: "2 days", label: "Typical first draft from your team" },
   { figure: "1", label: "Workspace for every brief, file, comment and invoice" },
   { figure: "0", label: "Hiring, notice periods or exit fees" },
 ];
@@ -65,7 +65,7 @@ export const PAINS: {
     img: "/gallery/people/agency.webp",
     ask: "Our last freelancer went quiet halfway through.",
     usual: "Brief someone new from scratch.",
-    fix: "One lead designer works on your account and stays.",
+    fix: "One team works on your account and stays: the same people every time.",
     proof: "designer",
     tint: "sky",
   },
@@ -116,8 +116,8 @@ export const OUTCOMES: { id: string; brand: string; title: string; img: string }
 // Who does the work. The photos are illustrations, said so on the page.
 export const PEOPLE: { title: string; body: string; src: string; w: number; h: number; alt: string }[] = [
   {
-    title: "One lead designer",
-    body: "The same senior designer leads your account and learns your brand. No new freelancer every month.",
+    title: "One team, the same people every time",
+    body: "A designer and a copywriter who learn your brand, with a creative lead on Growth and Studio. No new freelancer every month.",
     src: "/gallery/studio-present.webp",
     w: 1800,
     h: 1200,
@@ -148,12 +148,12 @@ export const PRICE_STEPS: { title: string; body: string }[] = [
     body: "Start a project or book a demo. Add your website and your workspace opens in your brand, with the first brief written.",
   },
   {
-    title: "Agree a monthly price",
-    body: "On a 20-minute call we work out how much design you need running at once. The price comes in writing and only changes if you agree.",
+    title: "Pick a plan",
+    body: "Instant $19, Starter $149, Growth $399 or Studio $999 a month, or the same in naira or pounds. Each plan is a team and a monthly pool of team hours.",
   },
   {
-    title: "Say yes, then start",
-    body: "No card until you say yes. Pause in a quiet month, cancel any month.",
+    title: "Pay by card, then send briefs",
+    body: "Checkout takes a minute. Try Instant free first; pause in a quiet month, cancel any month.",
   },
 ];
 
@@ -222,8 +222,8 @@ export const AUDIENCES: { id: string; tab: string; title: string; points: string
     tab: "Enterprise",
     title: "A design department on a budget you control.",
     points: [
-      "Flex: a monthly budget you spend on any service, with every project priced before it starts.",
-      "Fixed prices, live spend, and unused budget that carries over for 12 months.",
+      "Studio: a full team with a marketing lead, on one fixed monthly price.",
+      "Websites, rebrands and launches quoted as Bespoke, in writing, before work starts.",
       "Invoiced from our UK or Nigerian company, to the procurement rules you work under.",
     ],
     img: "signage",
@@ -256,10 +256,10 @@ export const CAPABILITIES: { slug: string; name: string; line: string; img: Show
 
 export const FEATURES = [
   { title: "Brief by talking", body: "Type or say what you need. Nka asks two quick questions at most, then writes the brief." },
-  { title: "Instant or Designer", body: "Three AI options in about a minute, or your lead designer with a date shown on send." },
+  { title: "Instant or your team", body: "Three AI options in about a minute, or your team with the hours and a date shown on send." },
   { title: "Review on the file", body: "Click anywhere to pin a comment. Every version kept. Approve in one click." },
   { title: "Brand book from your website", body: "Logo, colours, fonts and tone read from your site and used in every brief." },
-  { title: "Dates and spend, live", body: "Agreed dates, on-time record, and budget left, always in view." },
+  { title: "Dates and hours, live", body: "Delivery dates, your on-time record and team hours left, always in view." },
   { title: "Library and free resizes", body: "Every approved file in one place. Tap the sizes you need; your designer makes them." },
 ];
 

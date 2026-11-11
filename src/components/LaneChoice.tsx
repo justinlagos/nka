@@ -8,6 +8,7 @@ export function LaneChoice({ projectId, instant, instantLeft }: { projectId: str
   const router = useRouter();
   const [sending, setSending] = useState<"" | "instant" | "designer">("");
   const [error, setError] = useState("");
+  const [errorPath, setErrorPath] = useState("");
   const go = async (lane: "instant" | "designer") => {
     setSending(lane);
     setError("");
@@ -15,6 +16,7 @@ export function LaneChoice({ projectId, instant, instantLeft }: { projectId: str
     if (!r.ok) {
       setSending("");
       setError(r.error ?? "Couldn't send it. Try again.");
+      setErrorPath(r.path ?? "");
       return;
     }
     router.push(r.path!);
@@ -31,13 +33,19 @@ export function LaneChoice({ projectId, instant, instantLeft }: { projectId: str
           </button>
         )}
         <button type="button" className="lane lane-human" disabled={Boolean(sending)} onClick={() => go("designer")}>
-          <b>{sending === "designer" ? "Sending…" : "Send to my designer"}</b>
-          <span>Made by your designer. You&apos;ll see a delivery date straight away.</span>
+          <b>{sending === "designer" ? "Sending…" : "Send to my team"}</b>
+          <span>Made by your team on your plan hours. You&apos;ll see the hours and a delivery date straight away.</span>
         </button>
       </div>
       {error && (
         <p className="form-result is-error" role="status">
           {error}
+          {errorPath && (
+            <>
+              {" "}
+              <a href={errorPath}>See the plans</a>
+            </>
+          )}
         </p>
       )}
     </>

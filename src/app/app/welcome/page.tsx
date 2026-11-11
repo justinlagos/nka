@@ -1,4 +1,6 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
+import { planById } from "@/lib/plans";
 import { redirect } from "next/navigation";
 import { BrandCard } from "@/components/BrandCard";
 import { LaneChoice } from "@/components/LaneChoice";
@@ -28,11 +30,21 @@ export default async function Welcome({ searchParams }: { searchParams: Promise<
   const lead = o?.lead_id ? who.get(o.lead_id) : undefined;
   const brief = project ? normaliseBrief(project.brief) : null;
   const first = profile.full_name.split(" ")[0];
+  const [planId, cur, interval] = ((await cookies()).get("nka_plan")?.value ?? "").split("|");
+  const chosen = planById(planId);
 
   return (
     <div className="welcome">
       <p className="eyebrow">Your workspace is ready</p>
       <h1>{first ? `Welcome, ${first}.` : "Welcome."} Here&apos;s what we set up.</h1>
+      {chosen && (
+        <div className="callout">
+          <p>
+            You picked {chosen.name}. Start it when you&apos;re ready to send work to your team; Instant briefs are free until then.{" "}
+            <Link href={`/app/billing?plan=${chosen.id}&cur=${cur}&interval=${interval}`}>Start {chosen.name}</Link>
+          </p>
+        </div>
+      )}
 
       <div className="welcome-grid">
         <section className="panel">
@@ -51,7 +63,7 @@ export default async function Welcome({ searchParams }: { searchParams: Promise<
           </p>
           {lead && (
             <p className="small" style={{ marginTop: 16 }}>
-              <b>{displayName(lead)}</b> is your designer and leads your account.
+              <b>{displayName(lead)}</b> is your designer and leads your team.
             </p>
           )}
         </section>

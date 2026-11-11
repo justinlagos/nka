@@ -1,38 +1,45 @@
-import Link from "next/link";
 import { ActionForm } from "@/components/ActionForm";
-import { openBillingPortal, pausePlan, resumePlan, startCheckout } from "../actions";
+import { buyHours, openBillingPortal, pausePlan, resumePlan, startCheckout } from "../actions";
 import { ContactLine } from "@/components/ContactLine";
+import { PlanGrid, PlanSwitch } from "@/components/PlanGrid";
 import { canAdmin, requireMembership } from "@/lib/session";
-import { PLANS, planLabel } from "@/lib/plans";
-import { summariseBudget, type LedgerEntry } from "@/lib/budget";
+import { EVERY_PLAN, TOP_UP, currencyForCountry, hasCardPlan, isCurrency, planById, planLabel, type Currency } from "@/lib/plans";
 import { date, money } from "@/lib/format";
 import { getStripe } from "@/lib/stripe";
 
 const KIND: Record<string, string> = {
-  allocation: "Monthly budget",
-  top_up: "Top-up",
-  spend: "Project",
-  refund: "Refund",
-  expiry: "Expired",
+  allowance: "Monthly hours",
+  use: "Brief",
+  return: "Hours back",
+  top_up: "Extra hours",
   adjustment: "Adjustment",
-  payout: "Paid back to you",
 };
 
-export default async function Billing({ searchParams }: { searchParams: Promise<{ plan?: string; checkout?: string }> }) {
+type Balance = { allowance: number; top_ups: number; carried: number; granted: number; used: number; left: number };
+
+export default async function Billing({
+  searchParams,
+}: {
+  searchParams: Promise<{ plan?: string; checkout?: string; hours?: string; cur?: string; interval?: string }>;
+}) {
   const { supabase, org, role } = await requireMembership();
-  const { plan: wanted, checkout } = await searchParams;
+  const q = await searchParams;
   const admin = canAdmin(role);
   const cardsOn = Boolean(getStripe());
-  const onCardPlan =
-    ["starter", "growth", "studio"].includes(org.plan) && ["active", "trialing", "past_due", "paused"].includes(org.plan_status);
-  const offered = PLANS.find((p) => p.id === wanted);
-  const today = new Date().toISOString().slice(0, 10);
+  const onCardPlan = hasCardPlan(org.plan, org.plan_status);
+  const plan = planById(org.plan);
+  // A paying client keeps the currency they chose; anyone else sees their country's currency.
+  const currency: Currency = isCurrency(q.cur) ? q.cur : onCardPlan && isCurrency(org.currency) ? org.currency : currencyForCountry(org.country);
+  const interval = q.interval === "year" ? "year" : "month";
 
-  const { data: ledger } =
-    org.plan === "flex"
-      ? await supabase.from("budget_ledger").select("id, kind, amount, effective_on, note").eq("org_id", org.id).order("effective_on", { ascending: false })
-      : { data: [] as (LedgerEntry & { id: string; note: string })[] };
-  const budget = org.plan === "flex" ? summariseBudget((ledger ?? []) as LedgerEntry[], org.rollover_months, today) : null;
+  const [{ data: bal }, { data: ledger }] = plan
+    ? await Promise.all([
+        supabase.rpc("hours_balance", { p_org: org.id }),
+        supabase.from("hours_ledger").select("id, month, kind, hours, note, created_at").eq("org_id", org.id).order("created_at", { ascending: false }).limit(40),
+      ])
+    : [{ data: null }, { data: [] as { id: number; month: string; kind: string; hours: number; note: string; created_at: string }[] }];
+  const balance = (bal ?? null) as Balance | null;
+  const total = balance ? Number(balance.carried) + Number(balance.granted) : 0;
 
   return (
     <>
@@ -46,12 +53,17 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
         </div>
       </div>
 
-      {checkout === "done" && (
+      {q.checkout === "done" && (
         <div className="callout">
-          <p>Payment received. Your plan switches on within a minute; refresh if it still shows the old plan.</p>
+          <p>Payment received. Your plan and team hours switch on within a minute; refresh if it still shows the old plan.</p>
         </div>
       )}
-      {checkout === "cancelled" && (
+      {q.hours === "done" && (
+        <div className="callout">
+          <p>Payment received. {TOP_UP.hours} hours are added within a minute, and any brief that was waiting starts by itself.</p>
+        </div>
+      )}
+      {q.checkout === "cancelled" && (
         <div className="callout callout-warn">
           <p>Checkout was cancelled. Nothing was charged.</p>
         </div>
@@ -62,12 +74,69 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
         </div>
       )}
 
+      {plan && balance && (
+        <section className="panel">
+          <h2>Team hours this month</h2>
+          <div className="stats" style={{ marginBottom: 12 }}>
+            <div className="stat">
+              <b>{Number(balance.left)}</b>
+              <span>Hours left</span>
+            </div>
+            <div className="stat">
+              <b>{Number(balance.used)}</b>
+              <span>Used</span>
+            </div>
+            <div className="stat">
+              <b>{Number(balance.carried)}</b>
+              <span>Carried from last month</span>
+            </div>
+          </div>
+          <div className={`meter ${Number(balance.left) <= 0 ? "warn" : ""}`} aria-hidden="true">
+            <span style={{ width: `${total > 0 ? Math.min(100, Math.max(0, (Number(balance.used) / total) * 100)) : 0}%` }} />
+          </div>
+          <p className="small muted">
+            {plan.name} gives your team {plan.teamHours} hours a month{plan.extraLeadHours ? `, plus ${plan.extraLeadHours} marketing lead hours` : ""}.
+            Each brief uses the hours shown when it starts, and that number is fixed. Unused hours carry into next month only. A late
+            first draft gives its hours back.
+          </p>
+          {admin && onCardPlan && cardsOn && (
+            <ActionForm action={buyHours} submit={`Add ${TOP_UP.hours} hours for ${money(TOP_UP.price[currency], currency)}`} pending="Opening Stripe" buttonClass="btn btn-small">
+              <input type="hidden" name="currency" value={currency} />
+            </ActionForm>
+          )}
+          {(ledger ?? []).length > 0 && (
+            <div className="table-scroll" style={{ marginTop: 16 }}>
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>What</th>
+                    <th>Note</th>
+                    <th className="num">Hours</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(ledger ?? []).map((l) => (
+                    <tr key={l.id}>
+                      <td>{date(l.created_at)}</td>
+                      <td>{KIND[l.kind] ?? l.kind}</td>
+                      <td>{l.note}</td>
+                      <td className="num">{Number(l.hours) > 0 ? `+${Number(l.hours)}` : Number(l.hours)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
+
       {onCardPlan && (
         <section className="panel">
           <h2>Manage your plan</h2>
           <p>
             Change plan, update your card, download invoices or cancel. No notice period and no exit fee; a cancellation takes
-            effect at the end of the month you&apos;ve paid for.
+            effect at the end of the period you&apos;ve paid for.
           </p>
           {admin ? (
             <ActionForm action={openBillingPortal} submit="Open billing" pending="Opening" buttonClass="btn btn-ink" />
@@ -103,103 +172,44 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
         </section>
       )}
 
-      {budget && (
+      {!onCardPlan && org.plan !== "bespoke" && (
         <section className="panel">
-          <h2>Flex budget</h2>
-          <div className="stats" style={{ marginBottom: 12 }}>
-            <div className="stat">
-              <b>{money(budget.balance, org.currency)}</b>
-              <span>Left to spend</span>
-            </div>
-            <div className="stat">
-              <b>{money(budget.spent, org.currency)}</b>
-              <span>Spent so far</span>
-            </div>
-            <div className="stat">
-              <b>{money(budget.expiringSoon, org.currency)}</b>
-              <span>Expiring in 30 days</span>
-            </div>
-          </div>
-          <div className={`meter ${budget.balance < 0 ? "warn" : ""}`} aria-hidden="true">
-            <span style={{ width: `${budget.credited > 0 ? Math.min(100, Math.max(0, (budget.spent / budget.credited) * 100)) : 0}%` }} />
-          </div>
-          <p className="small muted">
-            Unused budget carries over for {org.rollover_months} months. If you leave, we pay back what&apos;s left. To top up or
-            ask for a payback, message the studio from any project.
+          <h2>Choose your plan</h2>
+          <p>
+            Every plan gives you a team and a monthly pool of team hours. Prices are fixed and the same everywhere, in dollars,
+            naira or pounds. Pay by card through Stripe; pause or cancel any month.
           </p>
-          <div className="table-scroll">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>What</th>
-                  <th>Note</th>
-                  <th className="num">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(ledger ?? []).map((l) => (
-                  <tr key={l.id}>
-                    <td>{date(l.effective_on)}</td>
-                    <td>{KIND[l.kind] ?? l.kind}</td>
-                    <td>{l.note}</td>
-                    <td className="num">{money(l.amount, org.currency, 2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
-
-      {!onCardPlan && org.plan !== "flex" && org.plan !== "bespoke" && (
-        <section className="panel">
-          <h2>Start your plan</h2>
-          {offered ? (
-            <>
-              <p>This is the plan we agreed with you.</p>
-              <div className="plans" style={{ marginTop: 12 }}>
-                <div className="plan plan-feature">
-                  <div className="plan-name">{offered.name}</div>
-                  <div className="plan-price">
-                    {money(offered.monthlyGbp)} <small>a month</small>
-                  </div>
-                  <ul>
-                    {offered.includes.map((x) => (
-                      <li key={x}>{x}</li>
-                    ))}
-                  </ul>
-                  {admin && cardsOn ? (
-                    <ActionForm action={startCheckout} submit={`Start ${offered.name}`} pending="Opening Stripe" buttonClass="btn">
-                      <input type="hidden" name="plan" value={offered.id} />
-                    </ActionForm>
-                  ) : (
-                    <p className="muted small">
-                      {admin ? "Card payments aren't switched on yet. Message the studio." : "Only an owner or admin can start a plan."}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <p className="small muted" style={{ marginTop: 18 }}>
-                Monthly, by any major card through Stripe. Cancel or pause from this page any month.
-              </p>
-            </>
-          ) : (
-            <>
-              <p>
-                Your plan and monthly price are agreed with you on a short call, then sent in writing. When you&apos;re ready, we
-                send a link that opens your plan here. Until then you can send briefs; we&apos;ll quote each one before starting.
-              </p>
-              <ContactLine lead="Want to talk now?" />
-            </>
-          )}
+          <PlanSwitch base="/app/billing" currency={currency} interval={interval} extra={q.plan ? { plan: q.plan } : {}} />
+          <PlanGrid
+            currency={currency}
+            interval={interval}
+            highlight={q.plan}
+            cta={(p) =>
+              admin && cardsOn ? (
+                <ActionForm action={startCheckout} submit={`Start ${p.name}`} pending="Opening Stripe" buttonClass={p.feature ? "btn" : "btn btn-line"}>
+                  <input type="hidden" name="plan" value={p.id} />
+                  <input type="hidden" name="interval" value={interval} />
+                  <input type="hidden" name="currency" value={currency} />
+                </ActionForm>
+              ) : (
+                <p className="muted small">{admin ? "Card payments aren't switched on yet. Message the studio." : "Only an owner or admin can start a plan."}</p>
+              )
+            }
+          />
+          <p className="small muted" style={{ marginTop: 18 }}>
+            Every plan: {EVERY_PLAN.join(", ").toLowerCase()}. Extra hours: {TOP_UP.hours} for {money(TOP_UP.price[currency], currency)}. Prices exclude VAT where it applies.
+          </p>
+          <p className="small muted">
+            Need a website, a rebrand or a launch? That&apos;s Bespoke, quoted after a call.
+          </p>
+          <ContactLine lead="Questions first?" />
         </section>
       )}
 
       {org.plan === "bespoke" && (
         <section className="panel">
           <h2>Bespoke</h2>
-          <p>Your account is invoiced directly. For invoices or changes, message the studio from any project.</p>
+          <p>Your account is quoted and invoiced directly. For invoices or changes, message the studio from any project.</p>
         </section>
       )}
     </>

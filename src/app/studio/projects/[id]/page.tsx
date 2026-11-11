@@ -13,7 +13,8 @@ import { signedUrls, people, displayName } from "@/lib/data";
 import { STATUS, type ProjectStatus } from "@/lib/status";
 import { BRIEF_FIELDS, normaliseBrief, SERVICE_OPTIONS } from "@/lib/brief";
 import { date, dateTime, fileSize, projectRef, initials } from "@/lib/format";
-import { planLabel } from "@/lib/plans";
+import { onPlan as planIsOn, planLabel } from "@/lib/plans";
+import { ReviewQueue } from "@/components/ReviewQueue";
 import { deliveryTiming, timingText, ukDate } from "@/lib/ontime";
 
 export const maxDuration = 300;
@@ -73,12 +74,12 @@ export default async function DesignerProject({ params }: { params: Promise<{ id
     .maybeSingle();
   if (!p || p.status === "draft") notFound();
   const org = p.org as unknown as { name: string; plan: string; plan_status: string; lead_id: string | null };
-  const onPlan = ["starter", "growth", "studio"].includes(org.plan) && ["active", "trialing"].includes(org.plan_status);
+  const onPlan = planIsOn(org.plan, org.plan_status);
 
   const [{ data: dRows }, { data: cRows }, { data: aRows }, { data: eRows }, { data: book }] = await Promise.all([
     supabase
       .from("deliverables")
-      .select("id, title, version, status, mime, file_name, size, note, storage_path, created_at, uploaded_by")
+      .select("id, title, version, status, mime, file_name, size, note, storage_path, created_at, uploaded_by, review_note")
       .eq("project_id", id)
       .order("created_at"),
     supabase.from("comments").select("id, body, author, created_at, pin_x, pin_y, resolved, deliverable_id").eq("project_id", id).order("created_at"),
@@ -86,18 +87,23 @@ export default async function DesignerProject({ params }: { params: Promise<{ id
     supabase.from("project_events").select("id, actor, kind, detail, created_at").eq("project_id", id).order("created_at", { ascending: false }).limit(40),
     supabase.from("brand_books").select("about, audiences, voice, rules, palette, fonts, logo_path, website").eq("org_id", p.org_id).maybeSingle(),
   ]);
-  const deliverables = (dRows ?? []) as Deliverable[];
+  const allVersions = (dRows ?? []) as (Deliverable & { uploaded_by: string | null; review_note: string })[];
+  // What the client sees, and what's waiting for Nka review or was sent back.
+  const deliverables = allVersions.filter((d) => d.status !== "internal_review" && d.status !== "returned");
+  const queue = allVersions.filter((d) => d.status === "internal_review" || d.status === "returned");
+  const { data: leadRow } = await supabase.from("org_team").select("user_id").eq("org_id", p.org_id).eq("role", "creative_lead").maybeSingle();
+  const iAmCreativeLead = leadRow?.user_id === userId;
   const comments = cRows ?? [];
   const attachments = ((aRows ?? []) as { id: string; file_name: string; size: number; storage_path: string; mime: string; kind: string }[]).filter(
     (a) => a.kind !== "concept",
   );
   const events = eRows ?? [];
   const urls = await signedUrls(supabase, [
-    ...deliverables.map((d) => d.storage_path),
+    ...allVersions.map((d) => d.storage_path),
     ...attachments.map((a) => a.storage_path),
     ...(book?.logo_path ? [book.logo_path] : []),
   ]);
-  const who = await people(supabase, [...comments.map((c) => c.author), ...events.map((e) => e.actor)]);
+  const who = await people(supabase, [...comments.map((c) => c.author), ...events.map((e) => e.actor), ...queue.map((d) => d.uploaded_by)]);
   const toReview = (c: (typeof comments)[number]): ReviewComment => {
     const person = who.get(c.author);
     return {
@@ -159,9 +165,9 @@ export default async function DesignerProject({ params }: { params: Promise<{ id
         {needsDate && (
           <>
             <p>
-              Read the brief and brand book, ask the client anything below, then {onPlan ? "confirm the date. It starts as soon as you do." : "propose a date. Nka adds the price and sends it to the client."}
+              Read the brief and brand book, ask the client anything below, then {onPlan ? "confirm the date and hours. It starts as soon as you do, on the client's plan hours." : "propose a date. Nka quotes it and sends it to the client."}
             </p>
-            <ActionForm action={sendEstimate} submit={onPlan ? "Confirm the date and start" : "Send to Nka to price"} pending="Sending" buttonClass="btn">
+            <ActionForm action={sendEstimate} submit={onPlan ? "Confirm the date and start" : "Send to Nka to quote"} pending="Sending" buttonClass="btn">
               <input type="hidden" name="id" value={p.id} />
               <div className="row-2">
                 <label className="field">
@@ -213,8 +219,22 @@ export default async function DesignerProject({ params }: { params: Promise<{ id
 
       <div className="grid-main">
         <div>
+          <ReviewQueue
+            canReview={iAmCreativeLead}
+            items={queue.map((d) => ({
+              id: d.id,
+              title: d.title,
+              version: d.version,
+              status: d.status,
+              note: d.note,
+              review_note: d.review_note,
+              created_at: d.created_at,
+              url: urls.get(d.storage_path) ?? null,
+              maker: d.uploaded_by === userId ? "you" : displayName(who.get(d.uploaded_by ?? "")),
+            }))}
+          />
           <section className="panel">
-            <h2>Files</h2>
+            <h2>Files the client sees</h2>
             {fileGroups.length === 0 ? (
               <div className="empty">
                 <strong>No files yet.</strong>

@@ -98,7 +98,7 @@ begin
     perform public.staff_send_estimate(p1, 100, 1, current_date, '');
     failed := failed + 1; log := log || ' | client sent estimate';
   exception when others then
-    if sqlerrm in ('Studio staff only.', 'Only this client''s designer or the Nka admin can do that.') then passed := passed + 1;
+    if sqlerrm in ('Studio staff only.', 'Only this client''s designer or the Nka admin can do that.', 'Only this client''s team or the Nka admin can do that.') then passed := passed + 1;
     else failed := failed + 1; log := log || ' | staff check wrong error: ' || sqlerrm; end if;
   end;
   reset role;
@@ -138,14 +138,13 @@ begin
   if v_text = 'in_progress' then passed := passed + 1; else failed := failed + 1; log := log || ' | after approve: ' || v_text; end if;
   reset role;
 
-  -- 9. Flex: staff allocates budget; an approved estimate draws it down
+  -- 9. Bespoke: staff quotes a brief and the client approves the price
   perform set_config('request.jwt.claims', json_build_object('sub', u_staff, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  perform public.staff_set_plan(v_org, 'flex', 'active', null, 'gbp', 2);
-  perform public.staff_ledger_entry(v_org, 'allocation', 5000, 'November budget');
+  perform public.staff_set_plan(v_org, 'bespoke', 'active', null, 'gbp', 2);
   begin
-    perform public.staff_ledger_entry(v_org, 'spend', 50, 'wrong sign');
-    failed := failed + 1; log := log || ' | positive spend accepted';
+    perform public.staff_set_plan(v_org, 'flex', 'active', null, 'gbp', 2);
+    failed := failed + 1; log := log || ' | flex plan accepted';
   exception when others then passed := passed + 1;
   end;
   reset role;
@@ -163,8 +162,8 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', u_owner, 'role', 'authenticated')::text, true);
   set local role authenticated;
   perform public.approve_estimate(p2);
-  select sum(amount) into v_num from public.budget_ledger where org_id = v_org;
-  if v_num = 3500 then passed := passed + 1; else failed := failed + 1; log := log || ' | balance ' || coalesce(v_num::text, 'null'); end if;
+  select status into v_text from public.projects where id = p2;
+  if v_text = 'in_progress' then passed := passed + 1; else failed := failed + 1; log := log || ' | bespoke after approve: ' || v_text; end if;
   reset role;
 
   -- 10. Staff uploads two versions; client reviews

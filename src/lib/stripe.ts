@@ -1,7 +1,7 @@
 import "server-only";
 import Stripe from "stripe";
 import { serverEnv } from "@/lib/env";
-import { planById, type PlanId } from "@/lib/plans";
+import { CURRENCIES, TOP_UP, lookupKey, planById, priceFor, type Currency, type Interval, type PlanId } from "@/lib/plans";
 
 let stripe: Stripe | null = null;
 
@@ -12,44 +12,74 @@ export function getStripe(): Stripe | null {
   return stripe;
 }
 
-// Finds the plan's monthly price by its lookup key. The first time a plan is bought, the
-// product and price are created from the plan table, so prices only ever live in plans.ts.
-export async function priceForPlan(s: Stripe, planId: PlanId): Promise<string | null> {
-  const plan = planById(planId);
-  if (!plan) return null;
-  const find = async () => (await s.prices.list({ lookup_keys: [plan.lookupKey], active: true, limit: 1 })).data[0]?.id ?? null;
+// Naira, dollars and pounds all have two decimal places in Stripe.
+const minor = (n: number) => Math.round(n * 100);
 
+// One Stripe Price per plan and interval, set in dollars with naira and pound options, so every
+// buyer sees one fixed figure in their own currency. Made from plans.ts the first time it's needed.
+async function findOrCreatePrice(
+  s: Stripe,
+  key: string,
+  productId: string,
+  productName: string,
+  amounts: Record<Currency, number>,
+  recurring: { interval: Interval } | null,
+  metadata: Record<string, string>,
+): Promise<string | null> {
+  const find = async () => (await s.prices.list({ lookup_keys: [key], active: true, limit: 1 })).data[0]?.id ?? null;
   const existing = await find();
   if (existing) return existing;
 
-  const productId = `nka_${plan.id}`;
   try {
     await s.products.retrieve(productId);
   } catch {
     try {
-      await s.products.create({
-        id: productId,
-        name: `Nka ${plan.name}`,
-        statement_descriptor: "NKA STUDIO",
-        metadata: { nka_plan: plan.id, active_limit: String(plan.activeLimit) },
-      });
+      await s.products.create({ id: productId, name: productName, statement_descriptor: "NKA STUDIO", metadata });
     } catch {
       /* created by a parallel request */
     }
   }
+  const options: Stripe.PriceCreateParams.CurrencyOptions = {};
+  for (const c of CURRENCIES) if (c !== "usd") (options as Record<string, { unit_amount: number }>)[c] = { unit_amount: minor(amounts[c]) };
   try {
     const price = await s.prices.create({
       product: productId,
-      currency: "gbp",
-      unit_amount: plan.monthlyGbp * 100,
-      recurring: { interval: "month" },
-      lookup_key: plan.lookupKey,
-      nickname: `Nka ${plan.name} monthly`,
-      metadata: { nka_plan: plan.id },
+      currency: "usd",
+      unit_amount: minor(amounts.usd),
+      currency_options: options as Record<string, Stripe.PriceCreateParams.CurrencyOptions>,
+      ...(recurring ? { recurring } : {}),
+      lookup_key: key,
+      nickname: productName,
+      metadata,
     });
     return price.id;
   } catch {
     // Another request created it first.
     return find();
   }
+}
+
+export async function priceForPlan(s: Stripe, planId: PlanId, interval: Interval = "month"): Promise<string | null> {
+  const plan = planById(planId);
+  if (!plan) return null;
+  const amounts = {
+    usd: priceFor(plan, "usd", interval),
+    ngn: priceFor(plan, "ngn", interval),
+    gbp: priceFor(plan, "gbp", interval),
+  };
+  return findOrCreatePrice(
+    s,
+    lookupKey(plan.id, interval),
+    `nka_${plan.id}_v3`,
+    `Nka ${plan.name}`,
+    amounts,
+    { interval },
+    { nka_plan: plan.id, team_hours: String(plan.teamHours), active_limit: String(plan.activeLimit) },
+  );
+}
+
+export async function priceForTopUp(s: Stripe): Promise<string | null> {
+  return findOrCreatePrice(s, TOP_UP.lookupKey, "nka_hours_v3", `Nka: ${TOP_UP.hours} extra team hours`, TOP_UP.price, null, {
+    nka_top_up_hours: String(TOP_UP.hours),
+  });
 }

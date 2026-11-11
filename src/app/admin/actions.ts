@@ -2,10 +2,10 @@
 import { revalidatePath } from "next/cache";
 import { done, fail, type ActionState } from "@/lib/action";
 import { requireStaff, requireStudio } from "@/lib/session";
-import { summariseBudget, type LedgerEntry } from "@/lib/budget";
 import { planById } from "@/lib/plans";
 import { notifyClient, notifyDirect, notifyStudio } from "@/lib/notify";
 import { siteOrigin } from "@/lib/origin";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { date, projectRef } from "@/lib/format";
 
 const str = (v: FormDataEntryValue | null, n = 4000) => String(v ?? "").trim().slice(0, n);
@@ -103,7 +103,7 @@ export async function addDeliverable(input: {
   size: number;
   note: string;
 }) {
-  const { supabase } = await requireStudio();
+  const { supabase, isAdmin } = await requireStudio();
   const { error } = await supabase.rpc("staff_add_deliverable", {
     p_project: input.projectId,
     p_title: input.title.slice(0, 200),
@@ -118,7 +118,8 @@ export async function addDeliverable(input: {
     return fail(error);
   }
   const { data: p } = await supabase.from("projects").select("org_id, number, title").eq("id", input.projectId).single();
-  if (p) {
+  if (p && isAdmin) {
+    // The Nka admin is the reviewer, so their upload goes straight to the client.
     await notifyClient(p.org_id, {
       subject: `Ready to review: ${input.title}`,
       heading: "A new file is ready to review",
@@ -126,9 +127,75 @@ export async function addDeliverable(input: {
       path: `/app/projects/${input.projectId}`,
       button: "Review it",
     });
+  } else if (p) {
+    await notifyReviewers(p.org_id, input.projectId, `${projectRef(p.number)} ${p.title}`, input.title);
   }
   refresh(input.projectId);
-  return done("Uploaded and sent for review. The client has been emailed.");
+  return done(isAdmin ? "Uploaded and sent to the client. They've been emailed." : "Uploaded. Nka checks it before the client sees it; you'll hear if it comes back.");
+}
+
+// A version waiting for Nka review: the admin hears, and so does the client's creative lead.
+async function notifyReviewers(orgId: string, projectId: string, ref: string, title: string) {
+  const origin = await siteOrigin();
+  const db = supabaseAdmin();
+  const { data: lead } = await db.from("org_team").select("user_id").eq("org_id", orgId).eq("role", "creative_lead").maybeSingle();
+  const { data: person } = lead ? await db.from("profiles").select("email").eq("id", lead.user_id).maybeSingle() : { data: null };
+  if (person?.email) {
+    await notifyDirect(person.email, {
+      subject: `To review: ${title}`,
+      heading: "A version needs your review",
+      lines: [ref, `${title}. Pass it to the client, or send it back with what to fix.`],
+      link: `${origin}/studio/projects/${projectId}`,
+      button: "Review it",
+    });
+  }
+  await notifyStudio(`To review: ${title}`, [ref, `${origin}/admin/projects/${projectId}`]);
+}
+
+// Pass a version to the client or send it back to the maker. The admin, or the client's creative
+// lead from another agency.
+export async function reviewVersion(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const { supabase } = await requireStudio();
+  const id = str(form.get("id"), 64);
+  const decision = str(form.get("decision"), 10) === "return" ? "return" : "release";
+  const note = str(form.get("note"), 2000);
+  const minutes = num(form.get("minutes"));
+  if (Number.isNaN(minutes)) return { ok: false, error: "Minutes must be a number." };
+  const { data: d } = await supabase.from("deliverables").select("project_id, org_id, title, version, uploaded_by").eq("id", id).maybeSingle();
+  if (!d) return { ok: false, error: "File not found." };
+  const { error } = await supabase.rpc("review_deliverable", {
+    p_deliverable: id,
+    p_decision: decision,
+    p_note: note,
+    p_minutes: minutes === null ? null : Math.round(minutes),
+  });
+  if (error) return fail(error);
+  const origin = await siteOrigin();
+  const { data: p } = await supabaseAdmin().from("projects").select("number, title").eq("id", d.project_id).single();
+  const ref = p ? `${projectRef(p.number)} ${p.title}` : d.title;
+  if (decision === "release") {
+    await notifyClient(d.org_id, {
+      origin,
+      subject: `Ready to review: ${d.title}`,
+      heading: "A new file is ready to review",
+      lines: [ref, `${d.title}, version ${d.version}`],
+      path: `/app/projects/${d.project_id}`,
+      button: "Review it",
+    });
+  } else if (d.uploaded_by) {
+    const { data: maker } = await supabaseAdmin().from("profiles").select("email").eq("id", d.uploaded_by).maybeSingle();
+    if (maker?.email) {
+      await notifyDirect(maker.email, {
+        subject: `Sent back: ${d.title}`,
+        heading: "Nka sent a version back",
+        lines: [ref, `${d.title}, version ${d.version}`, `What to fix: ${note}`, "The client hasn't seen it. Upload the fixed version to the same project."],
+        link: `${origin}/studio/projects/${d.project_id}`,
+        button: "Open the project",
+      });
+    }
+  }
+  refresh(d.project_id, d.org_id);
+  return done(decision === "release" ? "Passed. The client has been emailed." : "Sent back to the maker with your note.");
 }
 
 export async function setPlan(_prev: ActionState, form: FormData): Promise<ActionState> {
@@ -211,14 +278,24 @@ export async function addDesigner(_prev: ActionState, form: FormData): Promise<A
 
 export async function updateDesigner(_prev: ActionState, form: FormData): Promise<ActionState> {
   const { supabase } = await requireStaff();
+  const id = str(form.get("id"), 64);
   const partner = str(form.get("partner"), 64);
   const { error } = await supabase.rpc("admin_set_designer", {
-    p_user: str(form.get("id"), 64),
+    p_user: id,
     p_alias: str(form.get("alias"), 60),
     p_partner: partner || null,
     p_active: form.get("active") === "on",
   });
   if (error) return fail(error);
+  const role = str(form.get("role"), 30);
+  const vetting = str(form.get("vetting"), 10);
+  const { error: e2 } = await supabase.rpc("admin_set_talent", {
+    p_user: id,
+    p_role: role || null,
+    p_vetting: vetting || null,
+    p_note: form.has("vetting_note") ? str(form.get("vetting_note"), 1000) : null,
+  });
+  if (e2) return fail(e2);
   revalidatePath("/admin/designers");
   return done("Saved.");
 }
@@ -242,50 +319,51 @@ export async function savePartner(_prev: ActionState, form: FormData): Promise<A
   return done("Partner saved.");
 }
 
-export async function addLedgerEntry(_prev: ActionState, form: FormData): Promise<ActionState> {
+// ---------- Team hours, client teams, people ----------
+
+export async function adjustHours(_prev: ActionState, form: FormData): Promise<ActionState> {
   const { supabase } = await requireStaff();
   const org = str(form.get("org"), 64);
-  const kind = str(form.get("kind"), 20);
-  const raw = num(form.get("amount"));
-  if (raw === null || Number.isNaN(raw) || raw === 0) return { ok: false, error: "Enter an amount." };
-  // Staff type positive numbers; the sign follows the kind.
-  const amount = ["spend", "expiry", "payout"].includes(kind) ? -Math.abs(raw) : ["allocation", "top_up", "refund"].includes(kind) ? Math.abs(raw) : raw;
-  const effective = str(form.get("effective"), 10);
-  const { error } = await supabase.rpc("staff_ledger_entry", {
-    p_org: org,
-    p_kind: kind,
-    p_amount: amount,
-    p_note: str(form.get("note"), 500),
-    p_project: null,
-    p_effective: /^\d{4}-\d{2}-\d{2}$/.test(effective) ? effective : null,
-  });
+  const hours = num(form.get("hours"));
+  if (hours === null || Number.isNaN(hours)) return { ok: false, error: "Enter the hours, for example 3 or -2." };
+  const { error } = await supabase.rpc("staff_adjust_hours", { p_org: org, p_hours: hours, p_note: str(form.get("note"), 500) });
   if (error) return fail(error);
+  if (hours > 0) {
+    const { startWaitingBriefs } = await import("@/lib/automation");
+    await startWaitingBriefs(org, await siteOrigin());
+  }
   refresh(undefined, org);
-  return done("Recorded.");
+  return done(hours > 0 ? "Hours added. Any brief that was waiting has started." : "Hours removed.");
 }
 
-// Writes off any allocation that is past its rollover window and still unused.
-export async function expireBudget(_prev: ActionState, form: FormData): Promise<ActionState> {
+export async function setTeam(_prev: ActionState, form: FormData): Promise<ActionState> {
   const { supabase } = await requireStaff();
   const org = str(form.get("org"), 64);
-  const [{ data: o }, { data: rows }] = await Promise.all([
-    supabase.from("orgs").select("rollover_months").eq("id", org).single(),
-    supabase.from("budget_ledger").select("kind, amount, effective_on").eq("org_id", org),
-  ]);
-  const today = new Date().toISOString().slice(0, 10);
-  const s = summariseBudget((rows ?? []) as LedgerEntry[], o?.rollover_months ?? 2, today);
-  if (s.expirable <= 0) return done("Nothing to expire.");
-  const { error } = await supabase.rpc("staff_ledger_entry", {
-    p_org: org,
-    p_kind: "expiry",
-    p_amount: -s.expirable,
-    p_note: "Unused budget past its rollover window",
-    p_project: null,
-    p_effective: today,
-  });
+  const role = str(form.get("role"), 30);
+  const user = str(form.get("user"), 64);
+  const { error } = await supabase.rpc("admin_set_team", { p_org: org, p_role: role, p_user: user || null });
+  if (error) return fail(error);
+  if (user) {
+    const { data: who } = await supabase.from("profiles").select("email").eq("id", user).maybeSingle();
+    const { data: o } = await supabase.from("orgs").select("name").eq("id", org).maybeSingle();
+    if (who?.email && o) {
+      await sendTo(who.email, `New client: ${o.name}`, "You're on a new client's team", [
+        `${o.name} is yours as ${role.replace("_", " ")} from today.`,
+        role === "creative_lead" ? "You check every version before the client sees it. Read their brand book first." : "Read their brand book and open briefs first.",
+      ], `${await siteOrigin()}/studio`, "Open your work");
+    }
+  }
+  refresh(undefined, org);
+  return done(user ? "Saved. They've been emailed." : "Removed from the team.");
+}
+
+export async function setInternal(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const { supabase } = await requireStaff();
+  const org = str(form.get("org"), 64);
+  const { error } = await supabase.rpc("admin_set_internal", { p_org: org, p_internal: form.get("internal") === "on" });
   if (error) return fail(error);
   refresh(undefined, org);
-  return done(`Expired ${s.expirable.toFixed(2)}.`);
+  return done("Saved.");
 }
 
 export async function setLeadStatus(form: FormData) {

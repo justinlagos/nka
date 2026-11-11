@@ -22,8 +22,8 @@ const WORKSPACE = [
     body: "Every request with its stage, its delivery date and who's working on it. On a plan, extra requests wait in a queue and start automatically as others finish.",
   },
   {
-    title: "Estimates",
-    body: "On Flex and one-off projects, you see the cost, hours and delivery date before work starts. An owner or admin approves it, and the cost comes off your budget.",
+    title: "Team hours",
+    body: "Each brief shows the team hours it uses and its delivery date before work starts. The hours are fixed, and a late first draft gives them back. Bespoke work is quoted, and an owner or admin approves it.",
   },
   {
     title: "Review",
@@ -39,7 +39,7 @@ const WORKSPACE = [
   },
   {
     title: "Billing",
-    body: "Change or cancel your plan, update your card and download invoices. Flex clients see budget, spend and anything due to expire.",
+    body: "Change, pause or cancel your plan, add hours, update your card and download invoices. Every hour used or added is listed.",
   },
 ];
 
