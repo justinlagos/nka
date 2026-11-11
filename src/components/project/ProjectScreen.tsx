@@ -4,6 +4,7 @@ import { ActionForm } from "@/components/ActionForm";
 import { StatusPill } from "@/components/StatusPill";
 import { ReviewFile, type ReviewComment } from "@/components/ReviewFile";
 import { StaffPanel } from "@/components/StaffPanel";
+import { ReviewQueue } from "@/components/ReviewQueue";
 import { addProjectComment, approveEstimate, cancelProject, completeProject, declineEstimate } from "@/app/app/actions";
 import { finishWithDesigner } from "@/app/app/brief-actions";
 import { AutoRefresh } from "@/components/AutoRefresh";
@@ -41,7 +42,11 @@ const EVENT_TEXT: Record<string, (d: Record<string, unknown>) => string> = {
   auto_started: (d) => `started automatically, due ${date(String(d.due))}`,
   instant_started: () => "asked for instant options",
   instant_ready: (d) => `made ${d.count} instant options`,
-  instant_failed: () => "couldn't make the instant options, so your designer is making it instead",
+  instant_failed: () => "couldn't make the instant options, so your team is making it instead",
+  waiting_for_hours: (d) => `is waiting for team hours (needs ${d.hours})`,
+  hours_returned_late: (d) => `gave back ${d.hours} hours because the first draft was late`,
+  internal_version_for_review: (d) => `sent ${d.title} v${d.version} for Nka review`,
+  internal_version_returned: (d) => `sent ${d.title} v${d.version} back to the maker`,
 };
 
 // The project as the client sees it (mode "client", /app/projects/[id]) or as the Nka admin
@@ -73,7 +78,7 @@ export async function ProjectScreen({ id, sent, mode }: { id: string; sent?: str
   const [{ data: dRows }, { data: cRows }, { data: aRows }, { data: eRows }, staffList] = await Promise.all([
     supabase
       .from("deliverables")
-      .select("id, title, version, status, mime, file_name, size, note, storage_path, created_at")
+      .select("id, title, version, status, mime, file_name, size, note, storage_path, created_at, uploaded_by, review_note")
       .eq("project_id", id)
       .order("created_at"),
     supabase
@@ -86,7 +91,10 @@ export async function ProjectScreen({ id, sent, mode }: { id: string; sent?: str
     admin ? studioPeople(supabase) : Promise.resolve({ data: [] as { id: string; full_name: string; email: string }[] }),
   ]);
 
-  const deliverables = (dRows ?? []) as Deliverable[];
+  const allVersions = (dRows ?? []) as (Deliverable & { uploaded_by: string | null; review_note: string })[];
+  // The client only ever sees versions that passed Nka review; the admin sees the queue separately.
+  const deliverables = allVersions.filter((d) => d.status !== "internal_review" && d.status !== "returned");
+  const queue = allVersions.filter((d) => d.status === "internal_review" || d.status === "returned");
   const comments = cRows ?? [];
   const allAttachments = (aRows ?? []) as { id: string; file_name: string; size: number; storage_path: string; mime: string; kind?: string }[];
   const attachments = allAttachments.filter((a) => a.kind !== "concept");
@@ -96,11 +104,11 @@ export async function ProjectScreen({ id, sent, mode }: { id: string; sent?: str
     ? await supabase.from("deliverables").select("title, storage_path, mime").eq("id", p.source_deliverable).maybeSingle()
     : { data: null };
   const urls = await signedUrls(supabase, [
-    ...deliverables.map((d) => d.storage_path),
+    ...allVersions.map((d) => d.storage_path),
     ...allAttachments.map((a) => a.storage_path),
     ...(source ? [source.storage_path] : []),
   ]);
-  const who = await people(supabase, [...comments.map((c) => c.author), ...events.map((e) => e.actor), p.assignee, p.approved_by]);
+  const who = await people(supabase, [...comments.map((c) => c.author), ...events.map((e) => e.actor), p.assignee, p.approved_by, ...queue.map((d) => d.uploaded_by)]);
   // The admin sees who each designer really is and the name clients see.
   const seenAs = new Map<string, string>();
   if (admin) {
@@ -144,7 +152,8 @@ export async function ProjectScreen({ id, sent, mode }: { id: string; sent?: str
 
   const status = p.status as ProjectStatus;
   const brief = normaliseBrief(p.brief);
-  const showMoney = !designer && (org.plan === "flex" || org.plan === "none" || org.plan === "bespoke");
+  const showMoney = !designer && (org.plan === "none" || org.plan === "bespoke");
+  const waitingForHours = status === "submitted" && (eRows ?? []).some((e) => e.kind === "waiting_for_hours");
   const current = stageIndex(status);
   const general = comments.filter((c) => !c.deliverable_id);
   const timing = deliveryTiming(
@@ -227,8 +236,8 @@ export async function ProjectScreen({ id, sent, mode }: { id: string; sent?: str
         <div className="callout">
           <p>
             {admin
-              ? "Free resize. It doesn't use a plan slot or any Flex budget."
-              : "Free resize. It doesn't use one of your plan's request slots or any Flex budget."}
+              ? "Free resize. It doesn't use a plan slot or any team hours."
+              : "Free resize. It doesn't use one of your plan's request slots or any team hours."}
           </p>
         </div>
       )}
@@ -260,7 +269,22 @@ export async function ProjectScreen({ id, sent, mode }: { id: string; sent?: str
             </p>
           </div>
 
-          {(status === "awaiting_approval" || (p.estimate_sent_at && showMoney)) && (
+          {waitingForHours && (
+            <div className="callout callout-warn">
+              <p>
+                {admin
+                  ? `Waiting for team hours: it needs ${p.estimate_hours} and the client has fewer left this month. It starts by itself when they add hours or on the 1st.`
+                  : `This brief needs ${p.estimate_hours} team hours and your plan has fewer left this month. Add 5 hours in Billing and it starts straight away, or it starts by itself on the 1st.`}
+              </p>
+              {!admin && mayAdmin && (
+                <Link href="/app/billing" className="btn btn-small" style={{ marginTop: 8 }}>
+                  Add hours
+                </Link>
+              )}
+            </div>
+          )}
+
+          {(status === "awaiting_approval" || (p.estimate_sent_at && (showMoney || p.estimate_hours !== null))) && (
             <section className="estimate" style={{ marginBottom: 18 }}>
               <h2 className="h3" style={{ marginBottom: 8 }}>
                 Estimate
@@ -269,7 +293,7 @@ export async function ProjectScreen({ id, sent, mode }: { id: string; sent?: str
               <p className="small muted" style={{ margin: "4px 0 0" }}>
                 {showMoney
                   ? "Fixed price. If it takes us longer, that's on us. It only changes if you ask for something new and approve the new price."
-                  : "Included in your plan. No extra charge."}
+                  : `Uses ${p.estimate_hours ?? "the"} team hours from your plan. The number is fixed: if it takes longer, that's on us. A late first draft gives the hours back.`}
               </p>
               <dl className="kv" style={{ margin: "10px 0" }}>
                 {p.estimate_hours !== null && (
@@ -282,12 +306,6 @@ export async function ProjectScreen({ id, sent, mode }: { id: string; sent?: str
                   <>
                     <dt>Delivery</dt>
                     <dd>{date(p.estimate_due)}</dd>
-                  </>
-                )}
-                {org.plan === "flex" && (
-                  <>
-                    <dt>Paid from</dt>
-                    <dd>Your Flex budget, when approved</dd>
                   </>
                 )}
               </dl>
@@ -323,8 +341,25 @@ export async function ProjectScreen({ id, sent, mode }: { id: string; sent?: str
             </section>
           )}
 
+          {admin && (
+            <ReviewQueue
+              canReview
+              items={queue.map((d) => ({
+                id: d.id,
+                title: d.title,
+                version: d.version,
+                status: d.status,
+                note: d.note,
+                review_note: d.review_note,
+                created_at: d.created_at,
+                url: urls.get(d.storage_path) ?? null,
+                maker: displayName(who.get(d.uploaded_by ?? "")),
+              }))}
+            />
+          )}
+
           <section className="panel">
-            <h2>{admin ? "Files" : "Files from the studio"}</h2>
+            <h2>{admin ? "Files the client sees" : "Files from your team"}</h2>
             {fileGroups.length === 0 ? (
               <div className="empty">
                 <strong>No files yet.</strong>
@@ -499,7 +534,7 @@ export async function ProjectScreen({ id, sent, mode }: { id: string; sent?: str
           )}
           {staff && (
             <p className="small" style={{ margin: "0 0 16px" }}>
-              <Link href={`/admin/clients/${p.org_id}`}>{org.name}: plan, lead designer and other projects</Link>
+              <Link href={`/admin/clients/${p.org_id}`}>{org.name}: plan, team, hours and other projects</Link>
             </p>
           )}
           {!staff && profile.is_staff && (

@@ -4,9 +4,8 @@ import { BriefChat } from "@/components/BriefChat";
 import { instantStatus } from "@/lib/instant";
 import { requireMembership } from "@/lib/session";
 import { ACTIVE } from "@/lib/status";
-import { planLabel } from "@/lib/plans";
-import { summariseBudget, type LedgerEntry } from "@/lib/budget";
-import { date, money } from "@/lib/format";
+import { onPlan, planLabel } from "@/lib/plans";
+import { date } from "@/lib/format";
 import { people, displayName } from "@/lib/data";
 import { onTimeRecord, ukDate } from "@/lib/ontime";
 
@@ -17,19 +16,18 @@ export default async function WorkspaceHome() {
   const today = new Date().toISOString().slice(0, 10);
   const monthStart = today.slice(0, 8) + "01";
 
-  const [{ data: projects }, { data: ledger }, { data: leadRow }, { data: handovers }, { data: firstFiles }] = await Promise.all([
+  const planOn = onPlan(org.plan, org.plan_status);
+  const [{ data: projects }, { data: hours }, { data: leadRow }, { data: handovers }, { data: firstFiles }] = await Promise.all([
     supabase
       .from("projects")
       .select("id, number, title, status, deadline, estimate_due, updated_at, completed_at")
       .eq("org_id", org.id)
       .order("updated_at", { ascending: false })
       .limit(200),
-    org.plan === "flex"
-      ? supabase.from("budget_ledger").select("kind, amount, effective_on").eq("org_id", org.id)
-      : Promise.resolve({ data: [] as LedgerEntry[] }),
+    planOn ? supabase.rpc("hours_balance", { p_org: org.id }) : Promise.resolve({ data: null }),
     supabase.from("orgs").select("lead_id, lead_since").eq("id", org.id).maybeSingle(),
     supabase.from("lead_changes").select("from_user, note, created_at").eq("org_id", org.id).order("created_at", { ascending: false }).limit(1),
-    supabase.from("deliverables").select("project_id, created_at").eq("org_id", org.id).order("created_at").limit(2000),
+    supabase.from("deliverables").select("project_id, released_at").eq("org_id", org.id).not("released_at", "is", null).order("released_at").limit(2000),
   ]);
 
   const rows = (projects ?? []) as (ProjectRow & { completed_at: string | null })[];
@@ -37,7 +35,7 @@ export default async function WorkspaceHome() {
   const waiting = rows.filter((p) => p.status === "awaiting_approval" || p.status === "in_review");
   const queued = rows.filter((p) => p.status === "queued");
   const doneThisMonth = rows.filter((p) => p.status === "completed" && (p.completed_at ?? "") >= monthStart);
-  const budget = org.plan === "flex" ? summariseBudget((ledger ?? []) as LedgerEntry[], org.rollover_months, today) : null;
+  const hoursLeft = hours ? Number((hours as { left: number }).left) : null;
   const firstName = profile.full_name.split(" ")[0];
 
   const instant = await instantStatus(supabase, org.id);
@@ -47,7 +45,7 @@ export default async function WorkspaceHome() {
   const lead = leadId ? who.get(leadId) : undefined;
 
   const firstDelivery = new Map<string, string>();
-  for (const f of firstFiles ?? []) if (!firstDelivery.has(f.project_id)) firstDelivery.set(f.project_id, ukDate(f.created_at));
+  for (const f of firstFiles ?? []) if (!firstDelivery.has(f.project_id) && f.released_at) firstDelivery.set(f.project_id, ukDate(f.released_at));
   const record = onTimeRecord(rows.map((p) => ({ due: p.estimate_due, firstDelivered: firstDelivery.get(p.id) ?? null })));
 
   return (
@@ -69,7 +67,7 @@ export default async function WorkspaceHome() {
         <div className="stat">
           <b>{active.length}</b>
           <span>
-            In progress{org.active_limit && ["starter", "growth", "studio"].includes(org.plan) ? ` (plan allows ${org.active_limit})` : ""}
+            In progress{org.active_limit && planOn ? ` (plan allows ${org.active_limit})` : ""}
           </span>
         </div>
         <div className="stat">
@@ -92,10 +90,12 @@ export default async function WorkspaceHome() {
             <span>First drafts on time</span>
           </div>
         )}
-        {budget && (
+        {hoursLeft !== null && (
           <div className="stat">
-            <b>{money(budget.balance, org.currency)}</b>
-            <span>Flex budget left</span>
+            <b>{hoursLeft}</b>
+            <span>
+              <Link href="/app/billing">Team hours left</Link>
+            </span>
           </div>
         )}
       </div>
@@ -143,20 +143,32 @@ export default async function WorkspaceHome() {
                 )}
               </>
             ) : (
-              <p className="small muted">Nka gives your account one lead designer before your first brief starts. You&apos;ll see them here.</p>
+              <p className="small muted">Nka gives your account a team before your first brief starts. You&apos;ll see your lead here.</p>
             )}
           </section>
           <section className="panel">
             <h2>New brief</h2>
             <BriefChat instant={instant.on} instantLeft={instant.left} compact />
           </section>
-          {budget && budget.expiringSoon > 0 && (
+          {!planOn && org.plan !== "bespoke" && (
             <section className="panel">
-              <h2>Unused budget</h2>
+              <h2>Your team</h2>
               <p>
-                {money(budget.expiringSoon, org.currency)} reaches the end of its carry-over on {date(budget.nextExpiry)}. Use it, or
-                ask us to pay it back. Either is fine.
+                Instant briefs are free to try. To send work to a designer and copywriter, pick a plan: from one hour a month to a full
+                team with a creative lead.
               </p>
+              <Link href="/app/billing" className="btn btn-small">
+                See the plans
+              </Link>
+            </section>
+          )}
+          {hoursLeft !== null && hoursLeft < 2 && (
+            <section className="panel">
+              <h2>Hours running low</h2>
+              <p>You have {hoursLeft} team hours left this month. Add 5 hours from Billing, or new briefs wait for the 1st.</p>
+              <Link href="/app/billing" className="btn btn-small btn-line">
+                Add hours
+              </Link>
             </section>
           )}
         </aside>

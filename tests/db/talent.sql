@@ -36,6 +36,8 @@ begin
                (u_c2, 'c2@talent.test', 'Bo Client')) as x(id, email, name);
   if (select is_talent and alias = 'Tobi' and partner_id = v_partner from public.profiles where id = u_d1) then passed := passed + 1;
   else failed := failed + 1; log := log || ' | designer not set on sign-up'; end if;
+  -- Both have passed the Nka test task.
+  update public.profiles set vetting = 'passed' where id in (u_d1, u_d2);
   -- Only test designers take new clients in this transaction.
   update public.profiles set talent_active = false where is_talent and id not in (u_d1, u_d2);
   update public.profiles set talent_active = false where id = u_d2;
@@ -112,6 +114,22 @@ begin
   -- 8. Designer can't approve their own file
   begin perform public.decide_deliverable(d1, 'approved', ''); failed := failed + 1; log := log || ' | designer approved own file';
   exception when others then passed := passed + 1; end;
+  reset role;
+  -- 8b. The client can't see it until Nka passes it; the maker can't pass their own work
+  perform set_config('request.jwt.claims', json_build_object('sub', u_c1, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into v_int from public.deliverables where id = d1;
+  if v_int = 0 then passed := passed + 1; else failed := failed + 1; log := log || ' | client saw a version in Nka review'; end if;
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', u_d1, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  begin perform public.review_deliverable(d1, 'release', '', 5); failed := failed + 1; log := log || ' | maker passed own work';
+  exception when others then passed := passed + 1; end;
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', u_admin, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  v_text := public.review_deliverable(d1, 'release', '', 5);
+  if v_text = 'released' then passed := passed + 1; else failed := failed + 1; log := log || ' | admin review gave ' || v_text; end if;
   reset role;
 
   -- 9. The client sees the designer's alias, never their name or email

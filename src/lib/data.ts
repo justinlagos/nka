@@ -49,6 +49,9 @@ export async function studioPeople(supabase: SupabaseClient) {
       email: (r.email as string) ?? "",
       alias: (r.alias as string) ?? "",
       is_talent: Boolean(r.is_talent),
+      talent_role: (r.talent_role as string) ?? "designer",
+      vetting: (r.vetting as string) ?? "passed",
+      talent_active: r.talent_active !== false,
     })),
   };
 }

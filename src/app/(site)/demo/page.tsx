@@ -9,12 +9,16 @@ export const metadata: Metadata = {
 
 const NEXT = [
   { t: "Now", b: "Say what you need, add your website, and confirm your email with a code." },
-  { t: "Half a minute later", b: "Your workspace opens with your logo, colours and fonts read from your site, and your first brief written. Have AI make it on the spot, or send it to your designer." },
-  { t: "Within a working day", b: "Your designer calls at the time you picked. You get a monthly price in writing. No card until you say yes." },
+  { t: "Half a minute later", b: "Your workspace opens with your logo, colours and fonts read from your site, and your first brief written. Have AI make it on the spot for free." },
+  { t: "When you're ready", b: "Pick a plan and pay by card to send work to your team. No card until then. Want to talk first? We'll call at the time you picked." },
 ];
 
-export default async function Demo({ searchParams }: { searchParams: Promise<{ need?: string }> }) {
-  const { need } = await searchParams;
+export default async function Demo({ searchParams }: { searchParams: Promise<{ need?: string; plan?: string; cur?: string; interval?: string }> }) {
+  const { need, plan, cur, interval } = await searchParams;
+  const planChoice =
+    plan && ["instant", "starter", "growth", "studio"].includes(plan)
+      ? `${plan}|${["usd", "ngn", "gbp"].includes(cur ?? "") ? cur : "usd"}|${interval === "year" ? "year" : "month"}`
+      : "";
   return (
     <section className="section demo">
       <div className="wrap demo-grid">
@@ -35,7 +39,7 @@ export default async function Demo({ searchParams }: { searchParams: Promise<{ n
           </ol>
           <ContactLine lead="Rather talk now?" />
         </div>
-        <DemoFlow initialNeed={(need ?? "").slice(0, 300)} />
+        <DemoFlow initialNeed={(need ?? "").slice(0, 300)} planChoice={planChoice} />
       </div>
     </section>
   );

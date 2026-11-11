@@ -9,7 +9,15 @@ import { date, dateTime, projectRef } from "@/lib/format";
 // delivering, and a log of their work. Clients never see any of this.
 
 type Partner = { id: string; name: string; contact_name: string; contact_email: string; share_percent: number | null; agreement: string; active: boolean };
-type Designer = { id: string; email: string; full_name: string; alias: string; partner_id: string | null; talent_active: boolean; created_at: string };
+type Designer = { id: string; email: string; full_name: string; alias: string; partner_id: string | null; talent_active: boolean; created_at: string; talent_role?: string; vetting?: string; vetting_note?: string; vetted_at?: string | null };
+
+const ROLE_LABEL: Record<string, string> = {
+  designer: "Designer",
+  copywriter: "Copywriter",
+  creative_lead: "Creative lead",
+  marketing_lead: "Marketing lead",
+  motion: "Motion",
+};
 
 const OPEN = ["submitted", "awaiting_approval", "in_progress", "in_review", "changes_requested"];
 const EVENT: Record<string, string> = {
@@ -24,7 +32,7 @@ export default async function Designers() {
   const [{ data: partners }, { data: designers }, { data: pending }, { data: projects }, { data: files }, { data: orgs }, { data: events }] =
     await Promise.all([
       supabase.from("partners").select("*").order("name"),
-      supabase.from("profiles").select("id, email, full_name, alias, partner_id, talent_active, created_at").eq("is_talent", true).order("created_at"),
+      supabase.from("profiles").select("id, email, full_name, alias, partner_id, talent_active, created_at, talent_role, vetting, vetting_note, vetted_at").eq("is_talent", true).order("created_at"),
       supabase.from("talent_emails").select("email, alias, partner_id, created_at").order("created_at"),
       supabase.from("projects").select("id, number, title, status, estimate_due, assignee, org:orgs(name)").not("assignee", "is", null).limit(5000),
       supabase.from("deliverables").select("project_id, created_at").order("created_at").limit(10000),
@@ -205,7 +213,8 @@ export default async function Designers() {
           {ds.map((d) => (
             <details key={d.id} style={{ marginBottom: 10 }}>
               <summary className="label" style={{ cursor: "pointer" }}>
-                {d.full_name || d.email}
+                {d.full_name || d.email}, {ROLE_LABEL[d.talent_role ?? "designer"] ?? d.talent_role}
+                {d.vetting === "passed" ? "" : d.vetting === "failed" ? " (failed the test task)" : " (on trial: test task not passed)"}
               </summary>
               <ActionForm action={updateDesigner} submit="Save" pending="Saving" buttonClass="btn btn-small btn-line">
                 <input type="hidden" name="id" value={d.id} />
@@ -226,6 +235,35 @@ export default async function Designers() {
                     </select>
                   </label>
                 </div>
+                <div className="row-2">
+                  <label className="field">
+                    <span>Role</span>
+                    <select name="role" defaultValue={d.talent_role ?? "designer"}>
+                      {Object.entries(ROLE_LABEL).map(([v, l]) => (
+                        <option key={v} value={v}>
+                          {l}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="field">
+                    <span>Nka test task</span>
+                    <select name="vetting" defaultValue={d.vetting ?? "trial"}>
+                      <option value="trial">On trial: not passed yet</option>
+                      <option value="passed">Passed</option>
+                      <option value="failed">Failed</option>
+                    </select>
+                  </label>
+                </div>
+                <label className="field">
+                  <span>Test task notes</span>
+                  <textarea name="vetting_note" rows={2} maxLength={1000} defaultValue={d.vetting_note ?? ""} />
+                  <span className="hint">
+                    Set a test brief on an internal test workspace (mark a workspace internal on its client page) and judge it against the
+                    Nka standard. Until they pass, they can&apos;t be put on a client.
+                    {d.vetted_at ? ` Last changed ${date(d.vetted_at)}.` : ""}
+                  </span>
+                </label>
                 <label className="check">
                   <input type="checkbox" name="active" defaultChecked={d.talent_active} /> Taking new clients
                 </label>

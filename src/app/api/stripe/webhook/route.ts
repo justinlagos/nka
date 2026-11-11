@@ -3,7 +3,8 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { serverEnv } from "@/lib/env";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { planByLookupKey, planStatusFromStripe } from "@/lib/plans";
+import { isCurrency, planByLookupKey, planStatusFromStripe } from "@/lib/plans";
+import { startWaitingBriefs } from "@/lib/automation";
 
 // Keeps each organisation's plan in step with its Stripe subscription.
 export async function POST(request: NextRequest) {
@@ -23,13 +24,24 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    if (event.type === "checkout.session.completed") {
+    if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
       const session = event.data.object as Stripe.Checkout.Session;
       const orgId = session.client_reference_id ?? session.metadata?.org_id;
-      const subId = typeof session.subscription === "string" ? session.subscription : session.subscription?.id;
-      if (orgId && subId) {
-        const sub = await stripe.subscriptions.retrieve(subId);
-        await applySubscription(orgId, sub);
+      if (orgId && session.metadata?.kind === "top_up") {
+        // Extra team hours: added once per payment, then any brief that was waiting starts.
+        if (session.payment_status === "paid") {
+          const hours = Number(session.metadata?.hours) || 5;
+          const { error } = await supabaseAdmin().rpc("system_top_up", { p_org: orgId, p_hours: hours, p_ref: session.id });
+          if (error) throw new Error(error.message);
+          await startWaitingBriefs(orgId, new URL(request.url).origin);
+        }
+      } else {
+        const subId = typeof session.subscription === "string" ? session.subscription : session.subscription?.id;
+        if (orgId && subId) {
+          const sub = await stripe.subscriptions.retrieve(subId);
+          await applySubscription(orgId, sub);
+          await startWaitingBriefs(orgId, new URL(request.url).origin);
+        }
       }
     } else if (
       event.type === "customer.subscription.created" ||
@@ -67,6 +79,8 @@ async function applySubscription(orgId: string, sub: Stripe.Subscription) {
     stripe_subscription_id: ended ? null : sub.id,
     plan_status: ended ? "inactive" : status,
   };
+  // The currency the client chose at checkout is the one they're billed in from now on.
+  if (isCurrency(sub.currency)) update.currency = sub.currency;
   if (ended) {
     update.plan = "none";
     update.active_limit = null;

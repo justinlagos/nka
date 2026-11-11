@@ -32,7 +32,7 @@ export default async function Clients() {
       <div className="app-head">
         <div>
           <h1>Clients</h1>
-          <p className="muted">Every organisation with a workspace. Set Flex and bespoke plans here; card plans update themselves from Stripe.</p>
+          <p className="muted">Every organisation with a workspace. Set Bespoke plans and test workspaces here; card plans update themselves from Stripe.</p>
         </div>
       </div>
       <section className="panel">

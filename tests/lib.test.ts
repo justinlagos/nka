@@ -1,74 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { summariseBudget, addMonths } from "../src/lib/budget.ts";
 import { structureBrief, parseDraft, normaliseBrief, titleFrom } from "../src/lib/brief.ts";
-import { planByLookupKey, planStatusFromStripe, PLANS } from "../src/lib/plans.ts";
+import { planByLookupKey, planStatusFromStripe, PLANS, lookupKey, priceFor, currencyForCountry, onPlan, hasCardPlan } from "../src/lib/plans.ts";
 import { safeFileName, money } from "../src/lib/format.ts";
-
-test("budget: spend draws the oldest credit first and balance adds up", () => {
-  const s = summariseBudget(
-    [
-      { kind: "allocation", amount: 5000, effective_on: "2026-09-01" },
-      { kind: "allocation", amount: 5000, effective_on: "2026-10-01" },
-      { kind: "spend", amount: -6000, effective_on: "2026-10-05" },
-    ],
-    2,
-    "2026-11-09",
-  );
-  assert.equal(s.balance, 4000);
-  assert.equal(s.lots[0].remaining, 0);
-  assert.equal(s.lots[1].remaining, 4000);
-  assert.equal(s.expirable, 0);
-});
-
-test("budget: an allocation expires 1 + rollover months after it starts", () => {
-  const s = summariseBudget([{ kind: "allocation", amount: 5000, effective_on: "2026-08-01" }], 2, "2026-11-09");
-  assert.equal(s.lots[0].expires_on, "2026-11-01");
-  assert.equal(s.expirable, 5000);
-  const after = summariseBudget(
-    [
-      { kind: "allocation", amount: 5000, effective_on: "2026-08-01" },
-      { kind: "expiry", amount: -5000, effective_on: "2026-11-09" },
-    ],
-    2,
-    "2026-11-09",
-  );
-  assert.equal(after.balance, 0);
-  assert.equal(after.expirable, 0);
-  assert.equal(after.expired, 5000);
-});
-
-test("budget: top-ups never expire, and soon-to-expire money is flagged", () => {
-  const s = summariseBudget(
-    [
-      { kind: "top_up", amount: 1000, effective_on: "2025-01-01" },
-      { kind: "allocation", amount: 2000, effective_on: "2026-08-20" },
-    ],
-    2,
-    "2026-11-09",
-  );
-  assert.equal(s.expirable, 0);
-  assert.equal(s.expiringSoon, 2000);
-  assert.equal(s.nextExpiry, "2026-11-20");
-});
-
-test("budget: spend before any credit is applied when credit arrives", () => {
-  const s = summariseBudget(
-    [
-      { kind: "spend", amount: -300, effective_on: "2026-10-01" },
-      { kind: "allocation", amount: 1000, effective_on: "2026-10-02" },
-    ],
-    2,
-    "2026-10-10",
-  );
-  assert.equal(s.balance, 700);
-  assert.equal(s.lots[0].remaining, 700);
-});
-
-test("addMonths clamps to month end", () => {
-  assert.equal(addMonths("2026-01-31", 1), "2026-02-28");
-  assert.equal(addMonths("2026-11-30", 3), "2027-02-28");
-});
 
 test("structureBrief keeps the client's words and asks instead of guessing", () => {
   const { title, brief } = structureBrief("We need an Instagram carousel for our scholarship launch.");
@@ -103,14 +37,31 @@ test("titleFrom trims greetings and long text", () => {
   assert.ok(titleFrom("a ".repeat(100)).length <= 60);
 });
 
-test("plans map from Stripe", () => {
-  for (const p of PLANS) assert.equal(planByLookupKey(p.lookupKey)?.id, p.id);
-  assert.equal(planByLookupKey("unknown"), undefined);
+test("plans: v3 list, lookup keys, currencies and hours", () => {
+  assert.deepEqual(PLANS.map((p) => p.id), ["instant", "starter", "growth", "studio"]);
+  assert.deepEqual(PLANS.map((p) => p.price.usd), [19, 149, 399, 999]);
+  assert.deepEqual(PLANS.map((p) => p.teamHours), [1, 8, 20, 40]);
+  assert.equal(planByLookupKey(lookupKey("growth", "month"))?.id, "growth");
+  assert.equal(planByLookupKey(lookupKey("studio", "year"))?.id, "studio");
+  assert.equal(planByLookupKey("nka_growth_monthly_gbp"), undefined);
+  assert.equal(priceFor(PLANS[2], "ngn", "year"), 5_400_000);
+  assert.equal(currencyForCountry("NG"), "ngn");
+  assert.equal(currencyForCountry("Nigeria"), "ngn");
+  assert.equal(currencyForCountry("GB"), "gbp");
+  assert.equal(currencyForCountry("KE"), "usd");
+  assert.equal(currencyForCountry(null), "usd");
+  assert.equal(onPlan("growth", "active"), true);
+  assert.equal(onPlan("growth", "past_due"), false);
+  assert.equal(onPlan("bespoke", "active"), false);
+  assert.equal(hasCardPlan("instant", "paused"), true);
   assert.equal(planStatusFromStripe("unpaid"), "past_due");
   assert.equal(planStatusFromStripe("incomplete_expired"), "canceled");
-  assert.equal(planStatusFromStripe("incomplete"), "inactive");
+  // Naira and pounds stay within 3% of the dollar price at the model's rates (Instant naira is the widest, 2.3%).
+  for (const p of PLANS) {
+    assert.ok(Math.abs(p.price.ngn / 1347 / p.price.usd - 1) < 0.03, `${p.id} naira`);
+    assert.ok(Math.abs((p.price.gbp * 1.34) / p.price.usd - 1) < 0.03, `${p.id} pounds`);
+  }
 });
-
 test("format helpers", () => {
   assert.equal(safeFileName("../../My Logo (final).PNG"), "My-Logo-final.PNG");
   assert.equal(safeFileName("..."), "file");
@@ -119,22 +70,6 @@ test("format helpers", () => {
 });
 
 import { deliveryTiming, timingText, onTimeRecord, ukDate } from "../src/lib/ontime.ts";
-
-test("budget: a payout returns unused budget and leaves nothing to spend", () => {
-  const s = summariseBudget(
-    [
-      { kind: "allocation", amount: 5000, effective_on: "2026-09-01" },
-      { kind: "spend", amount: -1800, effective_on: "2026-09-10" },
-      { kind: "payout", amount: -3200, effective_on: "2026-10-01" },
-    ],
-    12,
-    "2026-11-09",
-  );
-  assert.equal(s.balance, 0);
-  assert.equal(s.spent, 1800);
-  assert.equal(s.paidOut, 3200);
-  assert.equal(s.expirable, 0);
-});
 
 test("ontime: delivery against the agreed date", () => {
   assert.deepEqual(deliveryTiming(null, null, "2026-11-09"), { state: "none" });

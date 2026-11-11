@@ -26,6 +26,7 @@ export function BriefChat({ instant, instantLeft, compact = false }: { instant: 
   const [text, setText] = useState("");
   const [ready, setReady] = useState<Ready | null>(null);
   const [error, setError] = useState("");
+  const [errorPath, setErrorPath] = useState("");
   const [thinking, startThinking] = useTransition();
   const [sending, setSending] = useState<"" | "instant" | "designer">("");
   const [listening, setListening] = useState(false);
@@ -88,6 +89,7 @@ export function BriefChat({ instant, instantLeft, compact = false }: { instant: 
     if (!r.ok) {
       setSending("");
       setError(r.error ?? "Couldn't send it. Try again.");
+      setErrorPath(r.path ?? "");
       return;
     }
     router.push(r.path!);
@@ -152,8 +154,8 @@ export function BriefChat({ instant, instantLeft, compact = false }: { instant: 
                 </button>
               )}
               <button type="button" className="lane lane-human" disabled={Boolean(sending)} onClick={() => go("designer")}>
-                <b>{sending === "designer" ? "Sending…" : "Send to my designer"}</b>
-                <span>Made by your designer. You&apos;ll see a delivery date straight away.</span>
+                <b>{sending === "designer" ? "Sending…" : "Send to my team"}</b>
+                <span>Made by your team on your plan hours. You&apos;ll see the hours and a delivery date straight away.</span>
               </button>
             </div>
             <p className="small muted">
@@ -203,6 +205,12 @@ export function BriefChat({ instant, instantLeft, compact = false }: { instant: 
       {error && (
         <p className="form-result is-error" role="status">
           {error}
+          {errorPath && (
+            <>
+              {" "}
+              <a href={errorPath}>See the plans</a>
+            </>
+          )}
         </p>
       )}
     </div>

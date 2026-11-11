@@ -17,6 +17,7 @@ export type Org = {
   currency: string;
   rollover_months: number;
   stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
 };
 export type Membership = { role: Role; org: Org };
 
@@ -53,7 +54,7 @@ export const getMemberships = cache(async (): Promise<Membership[]> => {
   if (!userId) return [];
   const { data } = await supabase
     .from("org_members")
-    .select("role, org:orgs(id, name, country, plan, plan_status, active_limit, currency, rollover_months, stripe_customer_id)")
+    .select("role, org:orgs(id, name, country, plan, plan_status, active_limit, currency, rollover_months, stripe_customer_id, stripe_subscription_id)")
     .eq("user_id", userId)
     .order("created_at");
   return ((data ?? []) as unknown as { role: Role; org: Org | null }[])

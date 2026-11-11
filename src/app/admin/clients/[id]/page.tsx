@@ -2,12 +2,18 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActionForm } from "@/components/ActionForm";
 import { ProjectList, type ProjectRow } from "@/components/ProjectList";
-import { addLedgerEntry, expireBudget, setLead, setPlan } from "../../actions";
+import { adjustHours, setInternal, setLead, setPlan, setTeam } from "../../actions";
 import { requireStaff } from "@/lib/session";
 import { people, displayName , studioPeople } from "@/lib/data";
-import { FLEX, PLANS, planLabel } from "@/lib/plans";
-import { summariseBudget, type LedgerEntry } from "@/lib/budget";
-import { date, dateTime, money } from "@/lib/format";
+import { PLANS, planById, planLabel } from "@/lib/plans";
+import { date, dateTime } from "@/lib/format";
+
+const TEAM_ROLES = [
+  { role: "copywriter", label: "Copywriter" },
+  { role: "creative_lead", label: "Creative lead (reviews every version)" },
+  { role: "marketing_lead", label: "Marketing lead (Studio)" },
+  { role: "motion", label: "Motion (Studio)" },
+];
 
 export default async function Client({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -15,22 +21,26 @@ export default async function Client({ params }: { params: Promise<{ id: string 
   const { data: org } = await supabase.from("orgs").select("*").eq("id", id).maybeSingle();
   if (!org) notFound();
 
-  const [{ data: members }, { data: projects }, { data: ledger }, { data: book }, { data: staffRows }, { data: leadRows }] = await Promise.all([
+  const [{ data: members }, { data: projects }, { data: ledger }, { data: book }, { data: staffRows }, { data: leadRows }, { data: teamRows }, { data: bal }] = await Promise.all([
     supabase.from("org_members").select("user_id, role").eq("org_id", id),
     supabase.from("projects").select("id, number, title, status, deadline, estimate_due, updated_at").eq("org_id", id).order("updated_at", { ascending: false }).limit(100),
-    supabase.from("budget_ledger").select("id, kind, amount, effective_on, note").eq("org_id", id).order("effective_on", { ascending: false }),
+    supabase.from("hours_ledger").select("id, kind, hours, note, created_at").eq("org_id", id).order("created_at", { ascending: false }).limit(60),
     supabase.from("brand_books").select("about, updated_at").eq("org_id", id).maybeSingle(),
     studioPeople(supabase),
     supabase.from("lead_changes").select("id, from_user, to_user, note, created_at").eq("org_id", id).order("created_at", { ascending: false }).limit(20),
+    supabase.from("org_team").select("role, user_id").eq("org_id", id),
+    supabase.rpc("hours_balance", { p_org: id }),
   ]);
+  const team = new Map((teamRows ?? []).map((t) => [t.role as string, t.user_id as string]));
+  const balance = bal as { allowance: number; carried: number; granted: number; used: number; left: number; top_ups: number } | null;
+  const plan = planById(org.plan);
   const leads = leadRows ?? [];
   const who = await people(supabase, [
     ...(members ?? []).map((m) => m.user_id),
     org.lead_id,
     ...leads.flatMap((l) => [l.from_user, l.to_user]),
+    ...[...team.values()],
   ]);
-  const today = new Date().toISOString().slice(0, 10);
-  const budget = summariseBudget((ledger ?? []) as LedgerEntry[], org.rollover_months, today);
 
   return (
     <>
@@ -52,27 +62,29 @@ export default async function Client({ params }: { params: Promise<{ id: string 
             <h2>Projects</h2>
             <ProjectList rows={(projects ?? []) as ProjectRow[]} empty="No projects yet." base="/admin/projects" />
           </section>
-          {(org.plan === "flex" || (ledger ?? []).length > 0) && (
+          {(plan || (ledger ?? []).length > 0) && (
             <section className="panel">
-              <h2>Flex budget</h2>
-              <div className="stats">
-                <div className="stat">
-                  <b>{money(budget.balance, org.currency)}</b>
-                  <span>Balance</span>
+              <h2>Team hours</h2>
+              {balance && (
+                <div className="stats">
+                  <div className="stat">
+                    <b>{Number(balance.left)}</b>
+                    <span>Left this month</span>
+                  </div>
+                  <div className="stat">
+                    <b>{Number(balance.used)}</b>
+                    <span>Used</span>
+                  </div>
+                  <div className="stat">
+                    <b>{Number(balance.allowance)}</b>
+                    <span>Plan hours</span>
+                  </div>
+                  <div className="stat">
+                    <b>{Number(balance.carried)}</b>
+                    <span>Carried over</span>
+                  </div>
                 </div>
-                <div className="stat">
-                  <b>{money(budget.spent, org.currency)}</b>
-                  <span>Spent</span>
-                </div>
-                <div className="stat">
-                  <b>{money(budget.paidOut, org.currency)}</b>
-                  <span>Paid back</span>
-                </div>
-                <div className="stat">
-                  <b>{money(budget.expirable, org.currency)}</b>
-                  <span>Past rollover, unused</span>
-                </div>
-              </div>
+              )}
               <div className="table-scroll">
                 <table className="table">
                   <thead>
@@ -80,27 +92,40 @@ export default async function Client({ params }: { params: Promise<{ id: string 
                       <th>Date</th>
                       <th>Kind</th>
                       <th>Note</th>
-                      <th className="num">Amount</th>
+                      <th className="num">Hours</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(ledger ?? []).map((l) => (
                       <tr key={l.id}>
-                        <td>{date(l.effective_on)}</td>
-                        <td>{l.kind.replace("_", " ")}</td>
+                        <td>{date(l.created_at)}</td>
+                        <td>{String(l.kind).replace("_", " ")}</td>
                         <td>{l.note}</td>
-                        <td className="num">{money(l.amount, org.currency, 2)}</td>
+                        <td className="num">{Number(l.hours) > 0 ? `+${Number(l.hours)}` : Number(l.hours)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+              <ActionForm action={adjustHours} submit="Adjust hours" pending="Saving" buttonClass="btn btn-small btn-line" resetOnSuccess>
+                <input type="hidden" name="org" value={org.id} />
+                <div className="row-2">
+                  <label className="field">
+                    <span>Hours (+ or -)</span>
+                    <input type="number" name="hours" step="0.5" required />
+                  </label>
+                  <label className="field">
+                    <span>Why</span>
+                    <input type="text" name="note" maxLength={500} required placeholder="Goodwill for a slow week" />
+                  </label>
+                </div>
+              </ActionForm>
             </section>
           )}
         </div>
         <aside>
           <section className="panel">
-            <h2>Lead designer</h2>
+            <h2>Lead</h2>
             <p className="small">
               {org.lead_id
                 ? `${displayName(who.get(org.lead_id))}, since ${date(org.lead_since)}. New briefs go to them.`
@@ -114,8 +139,8 @@ export default async function Client({ params }: { params: Promise<{ id: string 
                   <option value="" disabled>
                     Choose
                   </option>
-                  {(staffRows ?? []).map((s) => (
-                    <option key={s.id} value={s.id}>
+                  {(staffRows ?? []).filter((s) => !s.is_talent || ["designer", "copywriter"].includes(s.talent_role)).map((s) => (
+                    <option key={s.id} value={s.id} disabled={s.is_talent && s.vetting !== "passed" && !org.internal}>
                       {s.full_name || s.email}
                       {s.is_talent ? (s.alias ? ` (clients see "${s.alias}")` : "") : " (admin)"}
                     </option>
@@ -149,19 +174,53 @@ export default async function Client({ params }: { params: Promise<{ id: string 
             )}
           </section>
           <section className="panel">
+            <h2>Team</h2>
+            <p className="small muted">
+              The lead above is the designer (or the copywriter on a copy-only Instant plan). Only people who passed the Nka test task
+              can be chosen, unless this is an internal test workspace. The creative lead must come from a different agency to the
+              makers they review.
+            </p>
+            {TEAM_ROLES.map((t) => (
+              <ActionForm key={t.role} action={setTeam} submit="Save" pending="Saving" buttonClass="btn btn-small btn-line">
+                <input type="hidden" name="org" value={org.id} />
+                <input type="hidden" name="role" value={t.role} />
+                <label className="field">
+                  <span>{t.label}</span>
+                  <select name="user" defaultValue={team.get(t.role) ?? ""}>
+                    <option value="">Nobody</option>
+                    {(staffRows ?? [])
+                      .filter((p) => p.is_talent && p.talent_role === t.role)
+                      .map((p) => (
+                        <option key={p.id} value={p.id} disabled={p.vetting !== "passed" && !org.internal}>
+                          {p.full_name || p.email}
+                          {p.alias ? ` ("${p.alias}")` : ""}
+                          {p.vetting !== "passed" ? " (test task not passed)" : ""}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              </ActionForm>
+            ))}
+            <ActionForm action={setInternal} submit="Save" pending="Saving" buttonClass="btn btn-small btn-line">
+              <input type="hidden" name="org" value={org.id} />
+              <label className="check">
+                <input type="checkbox" name="internal" defaultChecked={Boolean(org.internal)} /> Internal test workspace (for test tasks)
+              </label>
+            </ActionForm>
+          </section>
+          <section className="panel">
             <h2>Plan</h2>
             <ActionForm action={setPlan} submit="Save plan" pending="Saving" buttonClass="btn btn-small">
               <input type="hidden" name="org" value={org.id} />
               <label className="field">
                 <span>Plan</span>
                 <select name="plan" defaultValue={org.plan}>
-                  <option value="none">No plan (quote per project)</option>
+                  <option value="none">No plan (Instant trial only)</option>
                   {PLANS.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name} ({p.activeLimit} active)
                     </option>
                   ))}
-                  <option value="flex">{FLEX.name}</option>
                   <option value="bespoke">Bespoke</option>
                 </select>
               </label>
@@ -175,68 +234,20 @@ export default async function Client({ params }: { params: Promise<{ id: string 
                   ))}
                 </select>
               </label>
-              <div className="row-2">
-                <label className="field">
-                  <span>Active limit</span>
-                  <input type="number" name="limit" min={1} defaultValue={org.active_limit ?? ""} placeholder="Plan default" />
-                </label>
-                <label className="field">
-                  <span>Rollover months</span>
-                  <input type="number" name="rollover" min={0} max={12} defaultValue={org.rollover_months} />
-                </label>
-              </div>
+              <label className="field">
+                <span>Active limit</span>
+                <input type="number" name="limit" min={1} defaultValue={org.active_limit ?? ""} placeholder="Plan default" />
+              </label>
               <label className="field">
                 <span>Currency</span>
                 <select name="currency" defaultValue={org.currency}>
                   <option value="gbp">GBP</option>
                   <option value="usd">USD</option>
-                  <option value="eur">EUR</option>
                   <option value="ngn">NGN</option>
                 </select>
               </label>
-              <p className="hint">Card plans are kept in step by Stripe; edits here are for Flex, bespoke and corrections.</p>
+              <p className="hint">Card plans are kept in step by Stripe; edits here are for Bespoke and corrections.</p>
             </ActionForm>
-          </section>
-          <section className="panel">
-            <h2>Budget entry</h2>
-            <ActionForm action={addLedgerEntry} submit="Record" pending="Saving" buttonClass="btn btn-small" resetOnSuccess>
-              <input type="hidden" name="org" value={org.id} />
-              <div className="row-2">
-                <label className="field">
-                  <span>Kind</span>
-                  <select name="kind" defaultValue="allocation">
-                    <option value="allocation">Monthly budget</option>
-                    <option value="top_up">Top-up</option>
-                    <option value="refund">Refund</option>
-                    <option value="spend">Spend</option>
-                    <option value="adjustment">Adjustment (+/-)</option>
-                    <option value="payout">Paid back to client</option>
-                  </select>
-                </label>
-                <label className="field">
-                  <span>Amount</span>
-                  <input type="number" name="amount" step="0.01" required />
-                </label>
-              </div>
-              <div className="row-2">
-                <label className="field">
-                  <span>Effective</span>
-                  <input type="date" name="effective" defaultValue={today} />
-                </label>
-                <label className="field">
-                  <span>Note</span>
-                  <input type="text" name="note" maxLength={500} placeholder="December budget" />
-                </label>
-              </div>
-            </ActionForm>
-            <p className="hint">
-              When a Flex client leaves, refund their balance in Stripe, then record the same amount here as Paid back.
-            </p>
-            <div style={{ marginTop: 12 }}>
-              <ActionForm action={expireBudget} submit="Expire unused budget past rollover" pending="Checking" buttonClass="btn btn-small btn-line">
-                <input type="hidden" name="org" value={org.id} />
-              </ActionForm>
-            </div>
           </section>
           <section className="panel">
             <h2>People</h2>

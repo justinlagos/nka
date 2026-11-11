@@ -1,66 +1,75 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ContactLine } from "@/components/ContactLine";
+import { PlanGrid, PlanSwitch } from "@/components/PlanGrid";
 import { PROMISES, FAQ } from "@/content/site";
-import { FLEX, PLANS } from "@/lib/plans";
+import { BESPOKE, EVERY_PLAN, TOP_UP } from "@/lib/plans";
+import { visitorCurrency } from "@/lib/geo";
+import { money } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description: "One monthly price, agreed on a short call and fixed in writing. Cancel or pause any month.",
+  description: "A team on a monthly plan: Instant $19, Starter $149, Growth $399, Studio $999, or the same in naira or pounds. Pause or cancel any month.",
 };
 
-const SHAPES = [
-  ...PLANS.map((p) => ({ name: p.name, forWho: p.forWho, points: p.includes.slice(0, 3) })),
-  { name: FLEX.name, forWho: FLEX.summary, points: FLEX.includes.slice(0, 4) },
-  {
-    name: "Bespoke",
-    forWho: "Large programmes, tenders and procurement rules.",
-    points: ["Quoted to the format you need", "Invoiced from our UK or Nigerian company", "One team for the length of the work"],
-  },
-];
-
-export default function Pricing() {
-  const costFaq = FAQ.filter((f) => /cost|pause|Nigeria|count/i.test(f.q));
+export default async function Pricing({ searchParams }: { searchParams: Promise<{ cur?: string; interval?: string }> }) {
+  const q = await searchParams;
+  const currency = await visitorCurrency(q.cur);
+  const interval = q.interval === "year" ? "year" : "month";
+  const costFaq = FAQ.filter((f) => /cost|team hours|team\?|pause|Nigeria|fast/i.test(f.q));
   return (
     <>
       <section className="hero">
         <div className="wrap">
           <p className="eyebrow">Pricing</p>
           <h1 className="h1" style={{ maxWidth: 900 }}>
-            One monthly price, agreed with you and fixed in writing.
+            A design and copy team, on one monthly price.
           </h1>
           <p className="lede" style={{ maxWidth: 760 }}>
-            What you pay depends on how much design you need running at the same time. We work that out with you on a 20-minute
-            call, then send the price in writing. It doesn&apos;t change unless you agree to change it.
+            Every plan gives you a team and a monthly pool of team hours. The same prices everywhere, in dollars, naira or pounds.
+            Start in two steps, pay by card, pause or cancel any month.
           </p>
-          <div className="hero-actions">
-            <Link href="/demo" className="btn">
-              Book a demo
-            </Link>
-          </div>
           <ContactLine />
         </div>
       </section>
 
       <section className="section">
         <div className="wrap">
-          <div className="section-head">
-            <h2 className="h1">Ways to work with us</h2>
-            <p className="muted">Plans differ by how many requests run at once. Every plan includes your lead designer, revisions and free resizes.</p>
+          <PlanSwitch base="/pricing" currency={currency} interval={interval} />
+          <PlanGrid
+            currency={currency}
+            interval={interval}
+            cta={(p) => (
+              <Link href={`/demo?plan=${p.id}&cur=${currency}&interval=${interval}`} className={p.feature ? "btn" : "btn btn-line"}>
+                Start with {p.name}
+              </Link>
+            )}
+          />
+          <p className="small muted" style={{ marginTop: 18 }}>
+            Every plan: {EVERY_PLAN.join(", ").toLowerCase()}. Extra hours: {TOP_UP.hours} for {money(TOP_UP.price[currency], currency)}.
+            Prices exclude VAT where it applies.
+          </p>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="wrap split">
+          <div>
+            <h2 className="h1">{BESPOKE.name}</h2>
+            <p className="muted">{BESPOKE.forWho}</p>
           </div>
-          <ul className="shape-list">
-            {SHAPES.map((s) => (
-              <li key={s.name}>
-                <h3>{s.name}</h3>
-                <p className="for">{s.forWho}</p>
-                <ul className="ticks">
-                  {s.points.map((x) => (
-                    <li key={x}>{x}</li>
-                  ))}
-                </ul>
-              </li>
-            ))}
-          </ul>
+          <div>
+            <ul className="ticks">
+              {BESPOKE.includes.map((x) => (
+                <li key={x}>{x}</li>
+              ))}
+            </ul>
+            <div className="hero-actions">
+              <Link href="/demo" className="btn btn-line">
+                Book a call
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -101,14 +110,14 @@ export default function Pricing() {
       <section className="section on-ink">
         <div className="wrap cta-band">
           <div>
-            <h2 className="h1">Get your price in writing.</h2>
+            <h2 className="h1">Try it before you pay.</h2>
             <p className="muted" style={{ marginTop: 16 }}>
-              Two quick steps, a workspace in your brand, and a 20-minute call. No card needed.
+              Two quick steps and a workspace in your brand, with free Instant briefs. Pick a plan when you want your team.
             </p>
           </div>
           <div className="hero-actions" style={{ marginTop: 0 }}>
             <Link href="/demo" className="btn">
-              Book a demo
+              Start a project
             </Link>
           </div>
         </div>

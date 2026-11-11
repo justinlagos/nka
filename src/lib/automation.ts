@@ -87,40 +87,91 @@ export async function sizeAndStart(projectId: string, origin: string, note?: str
     })
     .eq("id", projectId);
 
-  // Paid-up plan clients start straight away with that date.
-  const { data: started } = await db.rpc("system_autostart", {
+  // Plan clients start straight away on plan hours, or wait until hours come in.
+  const { data: outcome } = await db.rpc("system_start_brief", {
     p_project: projectId,
     p_hours: hours,
     p_due: due,
     p_notes: sized?.notes ?? "",
   });
+  const started = outcome === "started";
+  const waiting = outcome === "needs_hours";
   await notifyDesigner(p.id, {
     origin,
-    subject: started === true ? `New brief, started: ${p.title}` : `New brief: ${p.title}`,
-    heading: started === true ? "A new brief has started" : p.status === "queued" ? "A new brief is queued" : "A new brief is in",
+    subject: started ? `New brief, started: ${p.title}` : `New brief: ${p.title}`,
+    heading: started ? "A new brief has started" : p.status === "queued" ? "A new brief is queued" : "A new brief is in",
     lines: [
       `${projectRef(p.number)} ${p.title}, for ${org?.name ?? "your client"}`,
       ...(note ? [note] : []),
-      started === true
-        ? `It's on a plan, so it started straight away. First draft due ${date(due)}.`
-        : p.status === "queued"
-          ? "Their plan's active requests are full, so it starts by itself when one finishes."
-          : `Nka suggests a first draft by ${date(due)}. Confirm the date, or ask the client a question in the project.`,
+      started
+        ? `It's on their plan hours (${hours} hours), so it started straight away. First draft due ${date(due)}.`
+        : waiting
+          ? `It needs ${hours} team hours and they don't have enough left this month. It starts by itself when they add hours or on the 1st. Don't start it yet.`
+          : p.status === "queued"
+            ? "Their plan's active requests are full, so it starts by itself when one finishes."
+            : `They're not on a plan yet. Nka suggests ${hours} hours and a first draft by ${date(due)}. Nka quotes it before work starts.`,
     ],
     path: `/app/projects/${p.id}`,
     button: "Open the brief",
   });
-  if (started === true) {
+  if (started) {
     await notifyClient(p.org_id, {
       origin,
       subject: `Started: ${p.title}`,
-      heading: "Your designer has started",
-      lines: [`${projectRef(p.number)} ${p.title}`, `First draft due ${date(due)}.`],
+      heading: "Your team has started",
+      lines: [`${projectRef(p.number)} ${p.title}`, `It uses ${hours} of your team hours. First draft due ${date(due)}.`],
       path: `/app/projects/${p.id}`,
       button: "See the project",
     });
+  } else if (waiting) {
+    await notifyClient(p.org_id, {
+      origin,
+      subject: `Waiting for hours: ${p.title}`,
+      heading: "This brief needs more team hours",
+      lines: [
+        `${projectRef(p.number)} ${p.title} needs ${hours} team hours, and your plan has fewer left this month.`,
+        "Add 5 hours from Billing and it starts straight away, or it starts by itself when your hours renew on the 1st.",
+      ],
+      path: "/app/billing",
+      button: "Add hours",
+    });
   }
-  return { due, started: started === true, plan: org?.plan };
+  return { due, started, waiting, plan: org?.plan };
+}
+
+// Briefs that were waiting for hours start once a top-up lands, a plan starts, or the month turns.
+// The date is worked out from today with the size Nka gave the brief when it was sent.
+export async function startWaitingBriefs(orgId: string | null, origin: string) {
+  const db = supabaseAdmin();
+  const { data: rows } = await db.rpc("system_waiting_briefs", { p_org: orgId });
+  let count = 0;
+  const blocked = new Set<string>();
+  for (const r of (rows ?? []) as { id: string; org_id: string; hours: number }[]) {
+    if (blocked.has(r.org_id)) continue;
+    const { data: p } = await db
+      .from("projects")
+      .select("id, number, title, service, suggested_days, estimate_notes")
+      .eq("id", r.id)
+      .maybeSingle();
+    if (!p) continue;
+    const days = Math.max(1, Number(p.suggested_days) || (DEFAULT_DAYS[p.service] ?? [8, 2])[1]);
+    const due = addWorkingDays(ukDate(new Date()), days);
+    const { data: outcome } = await db.rpc("system_start_brief", {
+      p_project: r.id,
+      p_hours: r.hours,
+      p_due: due,
+      p_notes: p.estimate_notes ?? "",
+    });
+    if (outcome !== "started") {
+      blocked.add(r.org_id); // oldest first: later briefs for this client wait behind it
+      continue;
+    }
+    count += 1;
+    const lines = [`${projectRef(p.number)} ${p.title}`, `It uses ${r.hours} team hours. First draft due ${date(due)}.`];
+    await notifyClient(r.org_id, { origin, subject: `Started: ${p.title}`, heading: "Your team has started", lines, path: `/app/projects/${r.id}`, button: "See the project" });
+    await notifyDesigner(r.id, { origin, subject: `Brief started: ${p.title}`, heading: "A waiting brief has started", lines, path: `/app/projects/${r.id}`, button: "Open the brief" });
+  }
+  return count;
 }
 
 type Option = { title: string; prompt: string; size: ImageSize };

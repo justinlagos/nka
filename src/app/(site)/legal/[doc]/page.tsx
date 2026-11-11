@@ -1,13 +1,13 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { SITE } from "@/content/site";
-import { FLEX } from "@/lib/plans";
+import { PLANS, TOP_UP, YEARLY_MONTHS } from "@/lib/plans";
 
 // Plain-English starting points. Have them reviewed before taking payment.
 const DOCS: Record<string, { title: string; updated: string; body: { h: string; p: string[] }[] }> = {
   terms: {
     title: "Terms of service",
-    updated: "10 November 2026",
+    updated: "11 November 2026",
     body: [
       {
         h: "Who we are",
@@ -18,20 +18,23 @@ const DOCS: Record<string, { title: string; updated: string; body: { h: string; 
       {
         h: "Plans",
         p: [
-          "Plans are paid monthly in advance by card through Stripe. Your plan sets how many requests we work on at the same time. Requests beyond that wait in your queue and start in the order you sent them.",
-          "Your monthly price is agreed with you before you pay and confirmed in writing. We won't change it without your agreement.",
-          "You can change, pause or cancel your plan from Billing at any time. There is no minimum term, notice period or exit fee. Cancellation takes effect at the end of the month you have paid for, and work already started that month is finished. A pause stops charges for up to a month at a time; nothing new starts while paused.",
-          `Flex is a monthly budget with no minimum term. Each project is estimated, and the estimate is taken from your budget when an owner or admin approves it. Unused budget carries over for ${FLEX.rolloverMonths} months. If you leave, we pay back unused budget that hasn't been committed to approved work, within 14 days of your request.`,
+          `Plans are paid in advance by card through Stripe, monthly or yearly (12 months for the price of ${YEARLY_MONTHS}). Prices are the ones on our pricing page when you subscribe, in dollars, naira or pounds, before VAT where it applies. We review prices once a year and give you at least 30 days' notice of a change.`,
+          `Each plan gives you a team and a monthly pool of team hours: ${PLANS.map((p) => `${p.name} ${p.teamHours} hour${p.teamHours === 1 ? "" : "s"}`).join(", ")}. Studio also includes ${PLANS.find((p) => p.id === "studio")?.extraLeadHours ?? 8} marketing lead hours a month. Your plan also sets how many requests we work on at the same time; more briefs wait in your queue and start in the order you sent them.`,
+          "Each brief uses the team hours we show when it starts, and that number is fixed: if the work takes longer, that's on us. Unused hours carry into the next month only, then lapse. If your hours run out, a brief waits until you add hours or your hours renew. If a first draft misses the date we gave, that brief's hours go back into your allowance.",
+          `Extra hours are sold in blocks of ${TOP_UP.hours} and don't renew. Unused extra hours follow the same carry-over rule.`,
+          "You can change, pause or cancel your plan from Billing at any time. There is no minimum term, notice period or exit fee. Cancellation takes effect at the end of the period you have paid for, and work already started is finished. A pause stops charges for up to a month at a time; nothing new starts while paused.",
+          "Bespoke work (websites, rebrands, launches and tenders) is quoted in writing after a call, and starts when you approve the quote.",
         ],
       },
       {
         h: "Briefs and revisions",
         p: [
-          "We work to the brief you approve. We revise work until it meets that brief. If you change the brief, we'll tell you what that means for timing or cost before we continue.",
-          "An approved estimate is a fixed price. If the work takes us longer than estimated, we don't charge more. The price only changes if you ask for something new and approve a new estimate.",
+          "We work to the brief you send. We revise work until it meets that brief. A change that alters the brief (new copy, a new format, a new audience) is a new brief.",
+          "An approved Bespoke quote is a fixed price. If the work takes us longer, we don't charge more. The price only changes if you ask for something new and approve a new quote.",
+          "Every version is checked by Nka before you see it. Work is made by people; we use AI only for Instant briefs and early directions, and no unedited AI output is delivered as finished work.",
           "Other sizes and formats of work you have approved are included at no charge and don't count against your plan.",
-          "One lead designer works on your account. If we need to change who that is, we'll tell you first and give you a written handover note. For everyone's privacy, clients and designers talk only through Nka: phone numbers, email addresses and social or chat links aren't shared either way.",
-          "Delivery dates in estimates assume you reply to questions and reviews within two working days.",
+          "One team works on your account, the same people every time. If we need to change someone, we'll tell you first and give you a written handover note. Your contract is with us: the people who work on your account do so for Nka, and for everyone's privacy, clients and the team talk only through Nka. Phone numbers, email addresses and social or chat links aren't shared either way.",
+          "Delivery dates assume you reply to questions and reviews within two working days. Working days are Monday to Friday, not counting UK bank holidays or Nigerian public holidays.",
         ],
       },
       {

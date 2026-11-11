@@ -20,7 +20,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Two short steps, then a code by email. We read their website for the brand and write the
 // first brief, so the workspace opens ready to use.
-export function DemoFlow({ initialNeed = "" }: { initialNeed?: string }) {
+export function DemoFlow({ initialNeed = "", planChoice = "" }: { initialNeed?: string; planChoice?: string }) {
   const [a, setA] = useState<Answers>({ ...EMPTY, first_need: initialNeed });
   const [step, setStep] = useState(0);
   const [sent, start] = useActionState(startDemo, {} as DemoState);
@@ -86,6 +86,7 @@ export function DemoFlow({ initialNeed = "" }: { initialNeed?: string }) {
         }
       }}
     >
+      {planChoice && <input type="hidden" name="plan_choice" value={planChoice} />}
       <div className="demo-progress" aria-hidden="true">
         <span style={{ width: `${((step + 1) / STEPS) * 100}%` }} />
       </div>

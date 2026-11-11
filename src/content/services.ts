@@ -23,7 +23,7 @@ export const SERVICES: Service[] = [
       "Templates for letterheads, decks and social",
     ],
     asks: ["A new identity for a foundation", "An anniversary mark", "Tidying a logo that's drifted over the years"],
-    plans: "Studio and Flex",
+    plans: "Studio, or Bespoke for big projects",
     firstDraft: "Routes to review in about a week; full identity in 3 to 6 weeks",
   },
   {
@@ -37,7 +37,7 @@ export const SERVICES: Service[] = [
       "Invitations, RSVP pages and the social kit",
     ],
     asks: ["A conference booth", "A summit with a dozen sponsors", "An invite-only roundtable"],
-    plans: "Studio and Flex",
+    plans: "Studio, or Bespoke for big projects",
     firstDraft: "Key visual in 3 to 5 working days; production files on approval",
   },
   {
@@ -93,7 +93,7 @@ export const SERVICES: Service[] = [
       "Looping screen content for booths and stages",
     ],
     asks: ["A logo reveal for Instagram", "A loop for booth screens", "A 60-second explainer"],
-    plans: "Growth, Studio and Flex",
+    plans: "Growth and Studio",
     firstDraft: "Storyboard or style frames in 3 working days",
   },
   {
@@ -107,7 +107,7 @@ export const SERVICES: Service[] = [
       "Build handover in Figma, or built with our developers",
     ],
     asks: ["A landing page redesign", "A booking app's screens", "A company site"],
-    plans: "Landing pages from Growth; full sites and apps on Studio and Flex",
+    plans: "Landing pages from Growth; full sites and apps as Bespoke",
     firstDraft: "First direction in 3 to 5 working days",
   },
   {

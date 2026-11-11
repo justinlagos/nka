@@ -53,8 +53,8 @@ function Proof({ kind }: { kind: "date" | "designer" | "price" | "instant" }) {
           <path d="M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4" />
         </svg>
         <span>
-          <small>Your lead designer</small>
-          <b>The same person, every brief</b>
+          <small>Your team</small>
+          <b>The same people, every brief</b>
         </span>
       </div>
     );
@@ -241,9 +241,9 @@ export default function Home() {
             </article>
             <article className="speed2 speed2-human">
               <div className="speed2-top">
-                <span className="lp-chip">Designer</span>
+                <span className="lp-chip">Your team</span>
                 <b className="speed2-fig">2 days</b>
-                <p>Your lead designer makes it. A delivery date the moment you send the brief, revisions until it meets it, every size included.</p>
+                <p>Your designer and copywriter make it, and Nka checks it before you see it. A delivery date the moment you send the brief, revisions until it meets it, every size included.</p>
               </div>
               <Pic k="designer" sizes="(max-width: 900px) 92vw, 45vw" />
             </article>
@@ -356,7 +356,7 @@ export default function Home() {
               How pricing <em>works.</em>
             </h2>
             <p>
-              One monthly price, agreed with you and fixed in writing. Every plan includes your lead designer, revisions and
+              A team on a fixed monthly price, the same everywhere. Every plan includes the same people every time, revisions and
               free resizes.
             </p>
           </div>
@@ -418,7 +418,7 @@ export default function Home() {
                 <b>Half a minute later</b> Your workspace opens with your brand and the brief written.
               </li>
               <li>
-                <b>Within a working day</b> Your designer calls. You get a monthly price in writing. No card until you say yes.
+                <b>When you&apos;re ready</b> Pick a plan and pay by card to send work to your team. No card until then.
               </li>
             </ol>
             <div className="lp-actions">
