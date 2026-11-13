@@ -14,6 +14,8 @@ Clients subscribe to a plan (or a Flex budget), send briefs, approve estimates, 
 | Client workspace | `src/app/app` | Home, projects, brief assistant, brief editor, project page with review, library, brand book, billing, team, invites |
 | Studio admin | `src/app/admin` | Queue by lane, clients with plan and Flex budget controls, call requests |
 | Stripe webhook | `src/app/api/stripe/webhook` | Keeps each organisation's plan in step with Stripe |
+| Support chat | `src/components/SupportChat.tsx`, `src/app/api/support/chat`, `src/app/api/custard` | Abigail, the AI support assistant in the client workspace (Custard AI). Read only |
+| Support record | `src/app/admin/support` | Chat summaries and support cases from Abigail |
 | Database | `supabase/migrations` | Tables, row-level security and workflow functions |
 
 Plans, prices and limits live in `src/lib/plans.ts` only. Services, work and FAQs live in `src/content`.
@@ -28,6 +30,44 @@ Plans, prices and limits live in `src/lib/plans.ts` only. Services, work and FAQ
 - **Emails**: the client hears when work starts, when an estimate or file is ready, and gets a reminder after two days; the studio gets client decisions and a weekday list of late work (`/api/cron/daily`).
 
 Needs in Vercel: `OPENAI_API_KEY` (images; model in `IMAGE_MODEL`, default `gpt-image-2`), `RESEND_API_KEY` and `NKA_NOTIFY_EMAIL` (emails), `CRON_SECRET` (reminders). Optional `STUDIO_HOURLY_RATE` pre-fills estimate amounts for non-plan clients.
+
+## Support chat (Abigail, on Custard AI)
+
+A **Help** button in the client workspace opens a chat with Abigail, an AI assistant hosted by Custard AI (custardai.dev). She can check the client's plan, team hours, Instant briefs, projects, agreed dates and files waiting for review, and explain how Nka works. She can't change anything.
+
+How it's kept safe:
+
+- **Nka's server does all the talking to Custard.** The browser sends only the message text to `/api/support/chat`. The server reads who is signed in and which organisation they're in from the Supabase session. The Custard API key never reaches a browser.
+- **Signed client ids.** Abigail knows each client as `nka1.<user>.<org>.<signature>` (`src/lib/custard-sign.ts`). Only Nka can make one (`CUSTARD_IDENTITY_SECRET`), so a lookup for a made-up id returns nothing.
+- **Lookups check membership every time.** `/api/custard/lookup` needs the lookup secret. It then calls `support_lookup` (migration 0015), which checks the person is still in that organisation and returns only what they already see in their workspace: designers by alias, no versions still in Nka's internal review, no payment details.
+- **Conversations stay with their owner.** A conversation id from the browser is only carried on if it belongs to that person in that organisation.
+- **Daily cap.** 60 messages per person per UK day (`SUPPORT_DAILY_CAP` in `src/lib/custard.ts`), so a runaway chat can't spend the Custard credit.
+- **No changes.** Custard "action" requests are always refused.
+- **Transcripts stay in Custard.** Nka keeps the summary and case details (`support_events`). Anything that needs a person is emailed to `NKA_NOTIFY_EMAIL` and listed in `/admin/support`.
+
+The owner can also ask John (Custard's cofounder assistant) for numbers. These go to the same lookup address as `event: "metrics"`:
+- `customers`, `projects` and `mrr` (plan income at list prices) come from the database. Workspaces marked internal don't count.
+- `revenue` and `transactions` come from Stripe payments, less refunds.
+
+### Switching it on
+
+1. Apply `supabase/migrations/0015_support.sql`.
+2. In Vercel, set:
+   - `CUSTARD_API_KEY`: Custard > Account > Developers > Show API key.
+   - `CUSTARD_STAFF_ID`: Abigail's staff ID, from the same page.
+   - `CUSTARD_LOOKUP_SECRET`: a long random string. The same value also goes into Custard (step 3).
+   - `CUSTARD_IDENTITY_SECRET`: another long random string. This one never leaves Vercel. Changing it later makes Abigail treat every client as new.
+   - `CUSTARD_SIGNING_SECRET`: from Custard, after step 3.
+   - `SUPABASE_SECRET_KEY`, if it isn't set already.
+3. In Custard > Account > Developers:
+   - **Live lookup:** link `https://<your-domain>/api/custard/lookup`, secret = `CUSTARD_LOOKUP_SECRET`.
+   - **Webhook:** link `https://<your-domain>/api/custard/webhook`. Tap Connect, then copy the signing secret into `CUSTARD_SIGNING_SECRET`.
+4. In Custard > Staff > Abigail:
+   - Turn on **Live lookups**. Leave **Live changes** off.
+   - Turn on **Website chat**; the API only answers while it's on. Leave its list of web addresses empty, because Nka's own chat doesn't use Custard's widget.
+5. Redeploy. The Help button appears once `CUSTARD_API_KEY`, `CUSTARD_STAFF_ID`, `CUSTARD_IDENTITY_SECRET` and `SUPABASE_SECRET_KEY` are all set.
+
+Before real clients use it: have Custard AI's data processing agreement in place, and name Custard AI in the privacy notice as a service that processes support chats.
 
 ## Promises the product enforces
 
@@ -69,8 +109,9 @@ All status changes run through database functions that check who is asking, so a
 
 ## Checks
 
-- `npm test`: budget maths, brief layout, plan mapping, formatting.
+- `npm test`: budget maths, brief layout, plan mapping, formatting, and the support chat's signed ids, webhook signatures, UK periods and answers.
 - `tests/db/trust.sql` (20 checks: lead designer, resizes, pause, payouts, invites) and `tests/db/demo.sql` (9 checks: demo setup).
+- `tests/db/support.sql` (26 checks: lookups only for members, no other client's projects, aliases not names, no internal versions, daily cap, conversations bound to their owner, nothing callable from a browser).
 - `tests/db/workflow.sql`: 33 checks of roles, invites, estimates, Flex budget, versions, review, plan caps and the queue, leads, and isolation between clients. Runs in one transaction and rolls back.
 - `npm run build`
 
