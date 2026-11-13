@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
+import { SupportChat } from "@/components/SupportChat";
+import { supportChatReady } from "@/lib/custard";
 import { areaOf, getCurrentMembership, getMemberships, requireProfile } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Workspace", robots: { index: false } };
@@ -19,6 +21,10 @@ export default async function WorkspaceLayout({ children }: { children: React.Re
   return (
     <AppShell profile={profile} area="client" memberships={memberships} current={current}>
       {children}
+      {current && supportChatReady() && (
+        // Keyed by organisation so switching organisation starts a separate chat.
+        <SupportChat key={`${profile.id}-${current.org.id}`} userId={profile.id} orgId={current.org.id} firstName={profile.full_name.split(" ")[0] ?? ""} />
+      )}
     </AppShell>
   );
 }

@@ -25,6 +25,12 @@ export function serverEnv() {
     cronSecret: process.env.CRON_SECRET ?? "",
     fromEmail: process.env.NKA_FROM_EMAIL || "Nka Studio <nka.studio@motionplaylabs.com>",
     notifyEmail: process.env.NKA_NOTIFY_EMAIL ?? "",
+    // Abigail, the support assistant (Custard AI). See README, "Support chat".
+    custardApiKey: process.env.CUSTARD_API_KEY ?? "",
+    custardStaffId: process.env.CUSTARD_STAFF_ID ?? "",
+    custardLookupSecret: process.env.CUSTARD_LOOKUP_SECRET ?? "",
+    custardSigningSecret: process.env.CUSTARD_SIGNING_SECRET ?? "",
+    custardIdentitySecret: process.env.CUSTARD_IDENTITY_SECRET ?? "",
   };
 }
 

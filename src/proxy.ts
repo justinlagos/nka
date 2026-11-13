@@ -46,5 +46,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|api/stripe/webhook|.*\\.(?:png|jpg|jpeg|svg|webp|gif|ico|txt|xml|woff2?)$).*)"],
+  // Webhooks from Stripe and Custard AI carry no session, so they skip this.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|api/stripe/webhook|api/custard/|.*\\.(?:png|jpg|jpeg|svg|webp|gif|ico|txt|xml|woff2?)$).*)"],
 };

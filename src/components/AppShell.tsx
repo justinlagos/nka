@@ -29,6 +29,7 @@ const NAV: Record<Area, { href: string; label: string; exact?: boolean }[]> = {
     { href: "/admin/clients", label: "Clients" },
     { href: "/admin/designers", label: "Designers" },
     { href: "/admin/leads", label: "Call requests" },
+    { href: "/admin/support", label: "Support" },
   ],
 };
 
