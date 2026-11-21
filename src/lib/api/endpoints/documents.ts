@@ -431,6 +431,7 @@ async function run(input: Input, deps: Deps): Promise<EndpointResult> {
 export const documents: Endpoint = {
   id: "document",
   path: "documents",
+  group: "Documents and decks",
   title: "Document and deck builder",
   summary: "Sets a proposal, quote, report, one-pager or slide deck in a brand from raw notes or ready sections. Quote totals are calculated.",
   returns: "A print-ready HTML document (A4), or for a deck an editable PowerPoint file plus an HTML version.",

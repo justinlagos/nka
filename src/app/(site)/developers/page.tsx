@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ENDPOINTS, ON_REQUEST } from "@/lib/api/catalogue";
+import { GROUPS } from "@/lib/api/types";
 import { siteOrigin } from "@/lib/origin";
 
 export const metadata: Metadata = {
@@ -30,14 +31,14 @@ export default async function Developers() {
   const origin = await siteOrigin();
   const base = `${origin}/api/v1`;
   const first = ENDPOINTS[0];
-  const groups = [...new Set(ON_REQUEST.map((s) => s.group))];
+  const groups = GROUPS.filter((g) => ON_REQUEST.some((s) => s.group === g));
   return (
     <section className="page-head">
       <div className="wrap prose">
         <h1 className="h1">Nka API</h1>
         <p className="lede">
-          Give your software or AI agent a design studio. Send a brand and a brief, get finished files back. Five services run end to end; the
-          rest of the studio&apos;s work can be requested through the same API and is done by the team.
+          Give your software or AI agent a design studio. Send a brand and a brief, get finished files back. {ENDPOINTS.length} services run
+          end to end today. The rest can be requested through the same API and are done by the team until their pipelines go live.
         </p>
 
         <h2>Start</h2>
@@ -79,7 +80,7 @@ export default async function Developers() {
 
         <h2>The brand object</h2>
         <p>
-          Every service takes a <code>brand</code>. Give a name, colours and typefaces, or just a <code>website</code> and the missing parts are
+          Most services take a <code>brand</code>. Give a name, colours and typefaces, or just a <code>website</code> and the missing parts are
           read from it. Colours are used exactly as given; nothing is adjusted to look nicer.
         </p>
         <pre style={pre}>{JSON.stringify(
@@ -89,22 +90,29 @@ export default async function Developers() {
         )}</pre>
 
         <h2>Live services</h2>
-        {ENDPOINTS.map((e) => (
-          <div key={e.id}>
-            <h3 style={{ marginTop: "1.6em" }}>
-              {e.title} <span className="muted small">({e.units} credit{e.units === 1 ? "" : "s"})</span>
+        {GROUPS.filter((g) => ENDPOINTS.some((e) => e.group === g)).map((g) => (
+          <div key={g}>
+            <h3 style={{ marginTop: "2em", fontSize: 13, letterSpacing: "0.08em", textTransform: "uppercase" }} className="muted">
+              {g}
             </h3>
-            <p>
-              <code>POST {base}/{e.path}</code>
-            </p>
-            <p>{e.summary}</p>
-            <p>
-              <b>You get:</b> {e.returns}
-            </p>
-            <details>
-              <summary>Example request body</summary>
-              <pre style={pre}>{JSON.stringify(e.example, null, 2)}</pre>
-            </details>
+            {ENDPOINTS.filter((e) => e.group === g).map((e) => (
+              <div key={e.id}>
+                <h3 style={{ marginTop: "1.2em" }}>
+                  {e.title} <span className="muted small">({e.units} credit{e.units === 1 ? "" : "s"})</span>
+                </h3>
+                <p>
+                  <code>POST {base}/{e.path}</code>
+                </p>
+                <p>{e.summary}</p>
+                <p>
+                  <b>You get:</b> {e.returns}
+                </p>
+                <details>
+                  <summary>Example request body</summary>
+                  <pre style={pre}>{JSON.stringify(e.example, null, 2)}</pre>
+                </details>
+              </div>
+            ))}
           </div>
         ))}
 
@@ -113,6 +121,8 @@ export default async function Developers() {
           <li>Quote totals, contrast ratios, tints and type scales are calculated in code, not by a model.</li>
           <li>Where a model writes or organises text, any output containing a figure you didn&apos;t supply is discarded.</li>
           <li>Each result has a <code>notes</code> list that says what was skipped or needs checking, such as a logo that couldn&apos;t be fetched.</li>
+          <li>Logo concepts and names are starting points. No trademark, company-register or similarity search is done.</li>
+          <li>Logo file packs contain only your own artwork, cleaned. Nothing is redrawn.</li>
           <li>We don&apos;t email your recipients. E-card links come back to you to send.</li>
         </ul>
 

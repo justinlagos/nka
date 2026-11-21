@@ -25,17 +25,24 @@ export type Deps = {
   // Fetches a public file with private addresses blocked. null if it can't be fetched or is too big.
   fetchFile: (url: string, accept: string, maxBytes: number) => Promise<Fetched | null>;
   scanSite: (url: string) => Promise<SiteScan | null>;
+  // Whether a domain name has DNS records. null when the lookup itself failed.
+  hasDns: (domain: string) => Promise<boolean | null>;
   // The site's own address, for links inside results.
   origin: string;
   // Stores a card and its recipients; returns the card id.
   saveCard: (spec: Record<string, unknown>, recipients: { token: string; name: string; ref: string; fields: Record<string, string> }[], expiresAt: string | null) => Promise<string>;
 };
 
+// The five families of work the API covers.
+export const GROUPS = ["Brand and identity", "Documents and decks", "Social and campaign", "Motion", "Events"] as const;
+export type Group = (typeof GROUPS)[number];
+
 export type EndpointResult = { result: Record<string, unknown>; files: OutFile[] };
 
 export type Endpoint = {
   id: string; // also the MCP tool name
   path: string; // under /api/v1
+  group: Group;
   title: string;
   summary: string;
   // What comes back, in a sentence, for the catalogue and the docs.

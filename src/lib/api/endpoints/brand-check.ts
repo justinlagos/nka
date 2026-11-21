@@ -188,6 +188,7 @@ async function run(input: Input, deps: Deps): Promise<EndpointResult> {
 export const brandCheck: Endpoint = {
   id: "brand_check",
   path: "brand-checks",
+  group: "Brand and identity",
   title: "Brand check",
   summary: "Checks an image, SVG, HTML, CSS or piece of copy against a brand's colours, typefaces, voice and rules.",
   returns: "A score out of 100, a verdict (pass, review or fail) and a list of findings with evidence.",

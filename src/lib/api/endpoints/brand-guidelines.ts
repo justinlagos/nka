@@ -296,6 +296,7 @@ async function run(input: Input, deps: Deps): Promise<EndpointResult> {
 export const brandGuidelines: Endpoint = {
   id: "brand_guidelines",
   path: "brand-guidelines",
+  group: "Brand and identity",
   title: "Brand guidelines",
   summary: "Builds a brand guideline document from a brand's colours, typefaces, logo and description, or from its website.",
   returns: "A print-ready HTML guideline (A4 landscape), design tokens as JSON and CSS, and the computed colour and type data.",

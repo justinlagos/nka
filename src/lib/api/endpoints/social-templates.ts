@@ -288,6 +288,7 @@ async function run(input: Input, deps: Deps): Promise<EndpointResult> {
 export const socialTemplates: Endpoint = {
   id: "social_templates",
   path: "social-templates",
+  group: "Social and campaign",
   title: "Social template pack",
   summary: "Lays out a set of social posts as editable SVG in a brand's colours and typefaces, in each format you ask for.",
   returns: "One SVG per post per format, an HTML preview sheet, and the copy used.",

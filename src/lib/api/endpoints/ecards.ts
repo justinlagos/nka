@@ -126,6 +126,7 @@ async function run(input: Input, deps: Deps): Promise<EndpointResult> {
 export const ecards: Endpoint = {
   id: "ecard",
   path: "ecards",
+  group: "Events",
   title: "Personalised e-cards",
   summary: "Makes an animated, branded greeting card with a personal link for each recipient, and counts who opened it.",
   returns: "A card id, a preview link, one link per recipient (also as a CSV) and a stats address for open counts.",

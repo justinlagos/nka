@@ -216,3 +216,41 @@ export function slug(s: string, fallback = "file"): string {
     .slice(0, 60);
   return out || fallback;
 }
+
+// ---------- Hue, saturation, lightness ----------
+
+export function toHsl(hex: string): [number, number, number] {
+  const [r, g, b] = rgb(hex).map((v) => v / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  const h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [h * 60, s, l];
+}
+
+export function fromHsl(h: number, s: number, l: number): string {
+  const hue = ((h % 360) + 360) % 360;
+  const sat = Math.max(0, Math.min(1, s));
+  const lig = Math.max(0, Math.min(1, l));
+  const c = (1 - Math.abs(2 * lig - 1)) * sat;
+  const x = c * (1 - Math.abs(((hue / 60) % 2) - 1));
+  const m = lig - c / 2;
+  const [r, g, b] = hue < 60 ? [c, x, 0] : hue < 120 ? [x, c, 0] : hue < 180 ? [0, c, x] : hue < 240 ? [0, x, c] : hue < 300 ? [x, 0, c] : [c, 0, x];
+  return toHex((r + m) * 255, (g + m) * 255, (b + m) * 255);
+}
+
+// The same hue, darkened (or lightened) one step at a time until it reaches the contrast asked
+// for against `against`. Returns the colour unchanged if it already passes.
+export function withContrast(hex: string, against: string, min: number): string {
+  if (contrast(hex, against) >= min) return hex;
+  const [h, s, l] = toHsl(hex);
+  const darker = luminance(against) > 0.5;
+  for (let step = 1; step <= 100; step++) {
+    const next = fromHsl(h, s, darker ? l - step * 0.01 : l + step * 0.01);
+    if (contrast(next, against) >= min) return next;
+  }
+  return darker ? "#000000" : "#ffffff";
+}

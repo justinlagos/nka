@@ -1,4 +1,5 @@
 import "server-only";
+import { resolveNs } from "node:dns/promises";
 import { after, NextResponse, type NextRequest } from "next/server";
 import { askClaude, type ClaudePart } from "@/lib/ai";
 import { scanWebsite } from "@/lib/brand-sync";
@@ -66,6 +67,17 @@ export function buildDeps(origin: string, orgId: string, jobId: string): Deps {
       if (!safe || !(await resolvesPublic(safe.hostname))) return null;
       const scan = await scanWebsite(safe.toString());
       return scan ? { company: scan.company, about: scan.about, voice: scan.voice, palette: scan.palette, fonts: scan.fonts, logoUrl: scan.logoUrl } : null;
+    },
+    hasDns: async (domain) => {
+      if (!/^[a-z0-9-]{1,63}(\.[a-z0-9-]{1,63}){1,3}$/.test(domain)) return null;
+      try {
+        // NS records exist for any registered, delegated domain, whether or not it has a website.
+        const ns = await Promise.race([resolveNs(domain), new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 3000))]);
+        return ns.length > 0;
+      } catch (err) {
+        const code = (err as { code?: string }).code;
+        return code === "ENOTFOUND" || code === "ENODATA" ? false : null;
+      }
     },
     saveCard: async (spec, recipients, expiresAt) => {
       const db = supabaseAdmin();
