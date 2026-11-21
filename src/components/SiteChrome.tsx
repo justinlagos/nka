@@ -43,6 +43,7 @@ export function SiteFooter() {
           <Link href="/pricing">Pricing</Link>
           <Link href="/about">Studio</Link>
           <Link href="/demo">Book a demo</Link>
+          <Link href="/developers">API</Link>
           <Link href="/signin">Client sign in</Link>
         </nav>
         <nav aria-label="Legal" className="footer-links">

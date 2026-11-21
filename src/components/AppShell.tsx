@@ -19,6 +19,7 @@ const NAV: Record<Area, { href: string; label: string; exact?: boolean }[]> = {
     { href: "/app/brand", label: "Brand book" },
     { href: "/app/billing", label: "Billing" },
     { href: "/app/team", label: "Team" },
+    { href: "/app/developers", label: "API" },
   ],
   designer: [
     { href: "/studio", label: "Your work", exact: true },

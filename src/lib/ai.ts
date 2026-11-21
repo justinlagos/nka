@@ -8,9 +8,11 @@ export function aiEnabled(): boolean {
   return Boolean(serverEnv().anthropicKey);
 }
 
+export type ClaudePart = { type: "text"; text: string } | { type: "image"; source: { type: "base64"; media_type: string; data: string } };
+
 // One call to Claude. Returns the text, or null if there's no key or the call fails;
 // every caller has a plain fallback, so a slow or missing model never blocks the client.
-export async function askClaude(system: string, user: string, maxTokens = 1200, timeoutMs = 40_000): Promise<string | null> {
+export async function askClaude(system: string, user: string | ClaudePart[], maxTokens = 1200, timeoutMs = 40_000): Promise<string | null> {
   const { anthropicKey, anthropicModel, anthropicWorkspace } = serverEnv();
   if (!anthropicKey) return null;
   try {

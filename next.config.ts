@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Builds PowerPoint files for the API; kept out of the bundle so its Node-only parts load as written.
+  serverExternalPackages: ["pptxgenjs"],
   experimental: {
     serverActions: { bodySizeLimit: "2mb" },
   },

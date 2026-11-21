@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ActionForm } from "@/components/ActionForm";
 import { ProjectList, type ProjectRow } from "@/components/ProjectList";
-import { adjustHours, setInternal, setLead, setPlan, setTeam } from "../../actions";
+import { adjustHours, setApi, setInternal, setLead, setPlan, setTeam } from "../../actions";
 import { requireStaff } from "@/lib/session";
 import { people, displayName , studioPeople } from "@/lib/data";
 import { PLANS, planById, planLabel } from "@/lib/plans";
@@ -30,6 +30,11 @@ export default async function Client({ params }: { params: Promise<{ id: string 
     supabase.from("lead_changes").select("id, from_user, to_user, note, created_at").eq("org_id", id).order("created_at", { ascending: false }).limit(20),
     supabase.from("org_team").select("role, user_id").eq("org_id", id),
     supabase.rpc("hours_balance", { p_org: id }),
+  ]);
+  // Separate, so this page still loads before migration 0015 is applied.
+  const [{ data: api }, { data: apiUsed }] = await Promise.all([
+    supabase.from("api_accounts").select("enabled, monthly_credits, per_minute").eq("org_id", id).maybeSingle(),
+    supabase.rpc("my_api_credits_used", { p_org: id }),
   ]);
   const team = new Map((teamRows ?? []).map((t) => [t.role as string, t.user_id as string]));
   const balance = bal as { allowance: number; carried: number; granted: number; used: number; left: number; top_ups: number } | null;
@@ -247,6 +252,24 @@ export default async function Client({ params }: { params: Promise<{ id: string 
                 </select>
               </label>
               <p className="hint">Card plans are kept in step by Stripe; edits here are for Bespoke and corrections.</p>
+            </ActionForm>
+          </section>
+          <section className="panel">
+            <h2>API</h2>
+            <ActionForm action={setApi} submit="Save API settings" pending="Saving" buttonClass="btn btn-small">
+              <input type="hidden" name="org" value={org.id} />
+              <label className="check">
+                <input type="checkbox" name="enabled" defaultChecked={Boolean(api?.enabled)} /> API switched on
+              </label>
+              <label className="field">
+                <span>Monthly credits</span>
+                <input type="number" name="credits" min={0} step={1} defaultValue={api?.monthly_credits ?? 200} required />
+              </label>
+              <label className="field">
+                <span>Requests a minute, per key</span>
+                <input type="number" name="per_minute" min={1} max={600} step={1} defaultValue={api?.per_minute ?? 30} required />
+              </label>
+              <p className="hint">Used this month: {Number(apiUsed ?? 0)} credits. Switching off stops every key at once.</p>
             </ActionForm>
           </section>
           <section className="panel">

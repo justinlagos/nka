@@ -1,11 +1,11 @@
 "use client";
 import { useState } from "react";
 
-export function CopyLink({ url }: { url: string }) {
+export function CopyLink({ url, label = "Invite link", copyLabel = "Copy link" }: { url: string; label?: string; copyLabel?: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="copy-box">
-      <input type="text" readOnly value={url} aria-label="Invite link" onFocus={(e) => e.currentTarget.select()} />
+      <input type="text" readOnly value={url} aria-label={label} onFocus={(e) => e.currentTarget.select()} />
       <button
         type="button"
         className="btn btn-small btn-line"
@@ -19,7 +19,7 @@ export function CopyLink({ url }: { url: string }) {
           }
         }}
       >
-        {copied ? "Copied" : "Copy link"}
+        {copied ? "Copied" : copyLabel}
       </button>
     </div>
   );

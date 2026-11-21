@@ -220,6 +220,21 @@ export async function setPlan(_prev: ActionState, form: FormData): Promise<Actio
   return done("Plan saved.");
 }
 
+// Switches the API on or off for a client and sets its monthly credits.
+export async function setApi(_prev: ActionState, form: FormData): Promise<ActionState> {
+  const { supabase } = await requireStaff();
+  const org = str(form.get("org"), 64);
+  const credits = num(form.get("credits"));
+  const perMinute = num(form.get("per_minute"));
+  if (credits === null || Number.isNaN(credits) || credits < 0 || !Number.isInteger(credits)) return { ok: false, error: "Monthly credits must be a whole number." };
+  if (perMinute === null || Number.isNaN(perMinute) || perMinute < 1 || perMinute > 600 || !Number.isInteger(perMinute)) return { ok: false, error: "Requests a minute must be between 1 and 600." };
+  const { error } = await supabase.rpc("staff_set_api", { p_org: org, p_enabled: form.get("enabled") === "on", p_monthly_credits: credits, p_per_minute: perMinute });
+  if (error) return fail(error);
+  refresh(undefined, org);
+  revalidatePath("/app/developers");
+  return done("API settings saved.");
+}
+
 export async function setLead(_prev: ActionState, form: FormData): Promise<ActionState> {
   const { supabase } = await requireStaff();
   const org = str(form.get("org"), 64);

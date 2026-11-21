@@ -14,6 +14,7 @@ Clients subscribe to a plan (or a Flex budget), send briefs, approve estimates, 
 | Client workspace | `src/app/app` | Home, projects, brief assistant, brief editor, project page with review, library, brand book, billing, team, invites |
 | Studio admin | `src/app/admin` | Queue by lane, clients with plan and Flex budget controls, call requests |
 | Stripe webhook | `src/app/api/stripe/webhook` | Keeps each organisation's plan in step with Stripe |
+| API | `src/app/api/v1`, `src/app/api/mcp`, `src/lib/api` | The studio for other software: five services run end to end, the rest file a brief for the team |
 | Database | `supabase/migrations` | Tables, row-level security and workflow functions |
 
 Plans, prices and limits live in `src/lib/plans.ts` only. Services, work and FAQs live in `src/content`.
@@ -28,6 +29,22 @@ Plans, prices and limits live in `src/lib/plans.ts` only. Services, work and FAQ
 - **Emails**: the client hears when work starts, when an estimate or file is ready, and gets a reminder after two days; the studio gets client decisions and a weekday list of late work (`/api/cron/daily`).
 
 Needs in Vercel: `OPENAI_API_KEY` (images; model in `IMAGE_MODEL`, default `gpt-image-2`), `RESEND_API_KEY` and `NKA_NOTIFY_EMAIL` (emails), `CRON_SECRET` (reminders). Optional `STUDIO_HOURLY_RATE` pre-fills estimate amounts for non-plan clients.
+
+## API
+
+The same studio with a door for agents and platforms. Docs for callers are at `/developers`; the machine-readable versions are `/api/v1` (catalogue) and `/api/v1/openapi.json`. MCP clients connect to `/api/mcp`.
+
+- **Live services** (`src/lib/api/endpoints`): brand check, brand guidelines, documents and decks, e-cards, social templates. Each is one file with its input schema, an example and a `run` function. The schema validates requests and also fills the OpenAPI document, the MCP tool list and the docs page, so they can't drift.
+- **On request** (`ON_REQUEST` in `src/lib/api/catalogue.ts`): everything else. `POST /api/v1/requests` files a draft brief in the caller's workspace; a person sends it, so software never commits plan hours or a price.
+- **Moving a service from on request to live**: add an endpoint file, add it to `ENDPOINTS`, add a route folder under `src/app/api/v1`, remove it from `ON_REQUEST`, add tests.
+- **Access**: off by default. Switch it on per client and set monthly credits on the client's admin page. Clients make keys on `/app/developers`. Keys are stored as hashes and shown once.
+- **Jobs** (`src/lib/api/server.ts`): every request is a row in `api_jobs`. The database function `api_begin_job` checks the key, the per-minute rate and the monthly credits and records the job in one step. Failed jobs cost nothing.
+- **What is never made up**: quote totals, contrast, tints and type scales are computed. Where Claude organises or writes text, output containing a figure the caller didn't supply is discarded. Results carry a `notes` list saying what was skipped.
+- **Files callers point us at** (`src/lib/api/fetch.ts`): fetched with private and metadata addresses blocked, by name and by DNS, on every redirect hop.
+
+Needs in Vercel: `SUPABASE_SECRET_KEY` (all API calls), `NEXT_PUBLIC_SITE_URL` (links in results), `ANTHROPIC_API_KEY` (image and copy checks, voice principles, organising raw notes, writing posts from a topic; everything else runs without it). Apply migration `0015_api.sql`.
+
+Not built yet: card billing for API use (credits are capped per client by hand for now), PDF output (documents are print-ready HTML), and PNG output for social templates (SVG only).
 
 ## Promises the product enforces
 
@@ -69,7 +86,8 @@ All status changes run through database functions that check who is asking, so a
 
 ## Checks
 
-- `npm test`: budget maths, brief layout, plan mapping, formatting.
+- `npm test`: budget maths, brief layout, plan mapping, formatting, and the API (schemas, colour maths, quote totals, layouts, key and webhook signing, address checks, MCP).
+- `tests/db/api.sql` (39 checks: keys, who can read what, rate limit, credits, idempotency, revoking, card opens).
 - `tests/db/trust.sql` (20 checks: lead designer, resizes, pause, payouts, invites) and `tests/db/demo.sql` (9 checks: demo setup).
 - `tests/db/workflow.sql`: 33 checks of roles, invites, estimates, Flex budget, versions, review, plan caps and the queue, leads, and isolation between clients. Runs in one transaction and rolls back.
 - `npm run build`

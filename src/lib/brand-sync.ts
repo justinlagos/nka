@@ -1,36 +1,13 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { askClaude, jsonFrom } from "@/lib/ai";
+import { fetchPublic } from "@/lib/api/fetch";
 import { normaliseUrl, parseHtml, pickFonts, pickLogo, pickPalette, type BrandScan } from "@/lib/brand-scan";
 
-const UA = "Mozilla/5.0 (compatible; NkaStudioBot/1.0; +https://nka-sigma.vercel.app)";
-
-// Follows up to 3 redirects by hand so every hop is checked against private addresses.
-async function safeFetch(raw: string, accept: string, maxBytes: number): Promise<{ url: string; body: ArrayBuffer; type: string } | null> {
-  let url = normaliseUrl(raw);
-  for (let hop = 0; url && hop < 4; hop++) {
-    try {
-      const res = await fetch(url, {
-        redirect: "manual",
-        headers: { "user-agent": UA, accept },
-        signal: AbortSignal.timeout(10_000),
-      });
-      if (res.status >= 300 && res.status < 400) {
-        const loc = res.headers.get("location");
-        url = loc ? normaliseUrl(new URL(loc, url).toString()) : null;
-        continue;
-      }
-      if (!res.ok) return null;
-      const len = Number(res.headers.get("content-length") ?? 0);
-      if (len > maxBytes) return null;
-      const body = await res.arrayBuffer();
-      if (body.byteLength > maxBytes) return null;
-      return { url, body, type: res.headers.get("content-type") ?? "" };
-    } catch {
-      return null;
-    }
-  }
-  return null;
+// Every hop is checked against private addresses, by name and by what the name resolves to.
+async function safeFetch(raw: string, accept: string, maxBytes: number): Promise<{ url: string; body: Uint8Array; type: string } | null> {
+  const url = normaliseUrl(raw);
+  return url ? fetchPublic(url, accept, maxBytes) : null;
 }
 
 const BRAND_PROMPT = `You read a company's website text and describe its brand for a design studio's brand book.
